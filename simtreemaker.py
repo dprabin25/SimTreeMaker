@@ -1,24 +1,3 @@
-"""
-simtreemaker.py  —  SLiM Cancer Simulation Runner
-----------------------------------------------
-Run a specific model by CSV name:
-    python simtreemaker.py MutationSpread
-    python simtreemaker.py ClonalGrowth
-    python simtreemaker.py Metastasis
-    python simtreemaker.py CaseStudy
-    python simtreemaker.py Tree
-
-Steps per model row:
-  1. Read slim_config.txt  (SLiM exe path + working directory)
-  2. Read models.csv       (parameters per model)
-  3. Generate + run a .slim script
-  4. Convert .trees → .nwk  (requires: pip install tskit)
-  5. Save two PNG plots     (requires: pip install biopython matplotlib)
-
-Dependencies:
-    pip install tskit biopython matplotlib
-"""
-
 import sys
 import os
 import csv
