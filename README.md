@@ -14,11 +14,3 @@ conda create -n SimTreeMaker python=3.12.2 biopython=1.85 pyslim=1.1.0 tskit=0.6
 conda activate SimTreeMaker
 ```
 
-#### Python packages
-
-Installing pandas, numpy and graphviz packages
-```
-conda install -c conda-forge pandas=2.2.2 numpy=1.26.4
-conda install -c conda-forge graphviz python-graphviz
-```
-
