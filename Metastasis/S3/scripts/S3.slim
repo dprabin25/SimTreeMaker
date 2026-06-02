@@ -1,0 +1,47 @@
+initialize() {
+    initializeSLiMModelType("nonWF");
+    initializeTreeSeq();
+    initializeMutationRate(0);
+    initializeMutationType("m1", 0.5, "f", 0);
+    initializeMutationType("m2", 0.5, "f", 0.6);
+    m2.convertToSubstitution = F;
+    initializeGenomicElementType("g1", m1, 0.001);
+    initializeGenomicElement(g1, 0, 99999);
+    initializeRecombinationRate(0);
+}
+
+1 early() {
+    sim.addSubpop("p1", 1);
+}
+
+reproduction() {
+    subpop.addCloned(individual); subpop.addCloned(individual);
+}
+
+early() {
+    targetSize = 150;
+    popSize = p1.individualCount;
+    p1.fitnessScaling = targetSize / popSize;
+    for (ind in p1.individuals) {
+        if (ind.age >= 2) {
+            ind.fitnessScaling = 0.0;
+            sim.treeSeqRememberIndividuals(sim.subpopulations.individuals);
+        }
+    }
+}
+
+10 late() {
+    inds = p1.individuals;
+    newborns = inds[inds.age == 0];
+    if (size(newborns) > 0) {
+        ind = sample(newborns, 1);
+        hapIndex = sample(0:1, 1);
+        genome = ind.haplosomes[hapIndex];
+        genome.addNewDrawnMutation(m2, 10000);
+    }
+}
+
+100 late() {
+    sim.treeSeqOutput("C:/SimTreeMaker/Metastasis/S3/tree/S3.tree");
+    sim.simulationFinished();
+}

@@ -1,0 +1,28 @@
+initialize() {
+    initializeSLiMModelType("WF");
+    initializeTreeSeq();
+    initializeMutationRate(0);
+    initializeMutationType("m1", 0.5, "f", 0);
+    initializeMutationType("m2", 0.5, "f", 0.3);
+    m2.convertToSubstitution = F;
+    initializeGenomicElementType("g1", m1, 0.001);
+    initializeGenomicElement(g1, 0, 99999);
+    initializeRecombinationRate(0);
+}
+
+1 early() {
+    // WF: use targetSize if set, otherwise initialPopSize
+    sim.addSubpop("p1", 1);
+}
+
+10 late() {
+    // WF: ind.age not available - sample any individual directly
+    ind = sample(p1.individuals, 1);
+    genome = ind.haplosomes[sample(0:1, 1)];
+    genome.addNewDrawnMutation(m2, 5000);
+}
+
+200 late() {
+    sim.treeSeqOutput("C:/SimTreeMaker/ClonalGrowth/Beneficial_Mutation_Growth/tree/Beneficial_Mutation_Growth.tree");
+    sim.simulationFinished();
+}

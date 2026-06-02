@@ -1,0 +1,7 @@
+# SLiM Configuration File
+# Edit the values below, then run: python run_slim.py
+
+SLIM_EXE = C:/msys64/mingw64/bin/slim
+
+# Working directory (current folder where script is executed)
+WORK_DIR = .
