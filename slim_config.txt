@@ -1,5 +1,5 @@
 # SLiM Configuration File
-# Edit the values below, then run: python run_slim.py
+# Edit the SLIM dir according to your SLIM.exe location
 
 SLIM_EXE = C:/msys64/mingw64/bin/slim
 
