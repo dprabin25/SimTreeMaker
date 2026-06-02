@@ -16,15 +16,19 @@ conda activate SimTreeMaker
 
 ## Files required
 SimTreeMaker/
-  simtreemaker.py
-  slim_newick.py
-  slim_config.txt       ## edit SLIM_EXE path 
-  Options/              ## Contains paramters for simulation
-    MutationSpread.csv  ### Add/Edit paramters for Mutation spread
-    ClonalGrowth.csv    ### Add/Edit paramters for ClonalGrowth
-    Metastasis.csv      ### Add/Edit paramters for Metastasis
-  CaseStudy/            ## Case study
-   *.slim               #### Case study slim codes
-   *.py                 #### 
-  ReadyTrees/           ## drop .trees files here if you want to generate output for 
-
+│
+├── simtreemaker.py        # Main pipeline script
+├── slim_newick.py         # SLiM tree-sequence → Newick conversion
+├── slim_config.txt        # SLiM executable + working directory config
+│
+├── Options/               # Simulation parameters
+│   ├── MutationSpread.csv
+│   ├── ClonalGrowth.csv
+│   └── Metastasis.csv
+│
+├── CaseStudy/
+│   ├── *.slim             # SLiM simulation scripts
+│   └── *.py               # Post-processing scripts for SLiM outputs
+│
+└── ReadyTrees/
+    └── *.trees            # SLiM tree-sequence input files
