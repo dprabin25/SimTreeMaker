@@ -44,7 +44,7 @@ Use files in Options/
 
 Run:
 
-Clonal growth simulation
+Clonal growth simulation using MutationSpread.csv
 
 Mutation spread simulation
 
