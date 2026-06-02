@@ -1,7 +1,0 @@
-# SLiM Configuration File
-# Edit the SLIM dir according to your SLIM.exe location
-
-SLIM_EXE = C:/msys64/mingw64/bin/slim
-
-# Working directory (current folder where script is executed)
-WORK_DIR = .
