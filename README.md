@@ -38,7 +38,7 @@ Inside "SimTreeMaker" dir there are these files.
 | `ReadyTrees/*.trees`         | Tree file     | SLiM tree-sequence input files             |
 
 # User Workflow Options
--Option 1: Parameter-driven simulation
+- Option 1: Parameter-driven simulation
 
 Use files in Options/
 
@@ -51,14 +51,14 @@ Mutation spread simulation
 Metastasis simulation
 
 
--Option 2: Case study execution
+- Option 2: Case study execution
 
 Directly run SLiM scripts in CaseStudy/
 
 Includes predefined simulation + analysis workflows
 
 
--Option 3: Tree sequence processing
+- Option 3: Tree sequence processing
 
 Place .trees files in ReadyTrees/
 
