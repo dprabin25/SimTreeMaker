@@ -37,31 +37,42 @@ Inside "SimTreeMaker" dir there are these files.
 | `CaseStudy/*.py`             | Python script | Post-processing / analysis of SLiM outputs |
 | `ReadyTrees/*.trees`         | Tree file     | SLiM tree-sequence input files             |
 
-# User Workflow Options
-- Option 1: Parameter-driven simulation
 
-Use files in Options/
+# User Workflow Options
+
+### Option 1: Parameter-driven simulation
+
+Use files in Options/ to define simulation behavior.
 
 Run:
+- Clonal growth simulation using Options/ClonalGrowth.csv
+  
+- Mutation spread simulation using Options/MutationSpread.csv
+  
+- Metastasis simulation using Options/Metastasis.csv
 
-Clonal growth simulation using MutationSpread.csv
+---
 
-Mutation spread simulation
+### Option 2: Case study execution
 
-Metastasis simulation
+Directly run SLiM scripts in CaseStudy/.
 
+Includes:
+- Predefined evolutionary simulations
+  
+- Integrated mutation, clonal growth, and metastasis workflows
+  
+- Full analysis pipelines
 
-- Option 2: Case study execution
+---
 
-Directly run SLiM scripts in CaseStudy/
-
-Includes predefined simulation + analysis workflows
-
-
-- Option 3: Tree sequence processing
-
-Place .trees files in ReadyTrees/
+### Option 3: Tree sequence processing
+Place .trees files in ReadyTrees/.
 
 Run pipeline to generate:
-Newick (.nwk) trees
-PNG visualizations
+
+- Newick (.nwk) phylogenetic trees
+  
+- PNG visualizations
+  
+- Evolutionary structure outputs
