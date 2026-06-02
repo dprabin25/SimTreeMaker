@@ -16,9 +16,6 @@ conda activate SimTreeMaker
 
 ## Files required
 SimTreeMaker/
-
-SimTreeMaker/
-│
 ├── simtreemaker.py        # Main pipeline script
 ├── slim_newick.py         # SLiM tree-sequence → Newick conversion
 ├── slim_config.txt        # SLiM executable + working directory config
