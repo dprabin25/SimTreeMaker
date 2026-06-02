@@ -22,7 +22,3 @@ conda install -c conda-forge pandas=2.2.2 numpy=1.26.4
 conda install -c conda-forge graphviz python-graphviz
 ```
 
-Installing opanai package
-```
-conda install conda-forge::openai==2.30.0   
-```
