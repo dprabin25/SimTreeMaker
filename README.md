@@ -15,19 +15,53 @@ conda activate SimTreeMaker
 ```
 
 ## Files required
-SimTreeMaker/
-  simtreemaker.py        - Main pipeline script
-  slim_newick.py         - SLiM tree-sequence → Newick conversion
-  slim_config.txt        - SLiM executable + working directory config
+Inside "SimTreeMaker" dir there are these files. 
 
-  Options/
-    MutationSpread.csv   - Mutation parameters
-    ClonalGrowth.csv     - Clonal growth parameters
-    Metastasis.csv       - Metastasis parameters
+# Core Files
+| File              | Type   | Description                                   |
+| ----------------- | ------ | --------------------------------------------- |
+| `simtreemaker.py` | Script | Main pipeline script                          |
+| `slim_newick.py`  | Script | Converts SLiM tree-sequences to Newick format |
+| `slim_config.txt` | Config | SLiM executable path + working directory      |
 
-  CaseStudy/
-    *.slim               - SLiM simulation scripts
-    *.py                 - Post-processing scripts for SLiM outputs
 
-  ReadyTrees/
-    *.trees              - SLiM tree-sequence input files
+# Input Files
+(User-defined / Editable)
+| Location                     | Type          | Description                                |
+| ---------------------------- | ------------- | ------------------------------------------ |
+| `Options/`                   | Folder        | Simulation parameter files                 |
+| `Options/MutationSpread.csv` | CSV           | Mutation dynamics parameters               |
+| `Options/ClonalGrowth.csv`   | CSV           | Clonal expansion parameters                |
+| `Options/Metastasis.csv`     | CSV           | Metastasis simulation parameters           |
+| `CaseStudy/*.slim`           | SLiM script   | Forward-time simulation models             |
+| `CaseStudy/*.py`             | Python script | Post-processing / analysis of SLiM outputs |
+| `ReadyTrees/*.trees`         | Tree file     | SLiM tree-sequence input files             |
+
+# User Workflow Options
+-Option 1: Parameter-driven simulation
+
+Use files in Options/
+
+Run:
+
+Clonal growth simulation
+
+Mutation spread simulation
+
+Metastasis simulation
+
+
+-Option 2: Case study execution
+
+Directly run SLiM scripts in CaseStudy/
+
+Includes predefined simulation + analysis workflows
+
+
+-Option 3: Tree sequence processing
+
+Place .trees files in ReadyTrees/
+
+Run pipeline to generate:
+Newick (.nwk) trees
+PNG visualizations
