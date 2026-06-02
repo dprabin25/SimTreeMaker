@@ -119,7 +119,7 @@ Make sure you are within working dir of SimTreeMaker. You can then type the foll
 
 If you use SimTreeMaker in your work, please cite:
 
-> Prabin Dawadi, Sayaka Miura. SLiM cancer evolution simulations and converting tree sequences into Newick phylogenies and visualizations. (2025). Under Review.
+> Prabin Dawadi,...............(2026) SLiM cancer evolution simulations and converting tree sequences into Newick phylogenies and visualizations. Under Review.
 
 ## License
 
