@@ -28,20 +28,20 @@ SimTreeMaker/
 
 ├── Options/               # Simulation parameters (Edit here for your parameters)
 
-  ├── MutationSpread.csv
+    └──MutationSpread.csv
 
-  ├── ClonalGrowth.csv
+    └──ClonalGrowth.csv
 
-  └── Metastasis.csv
+    └── Metastasis.csv
 
 
 ├── CaseStudy/
 
-  ├── *.slim             # SLiM simulation scripts
+   └── *.slim             # SLiM simulation scripts
 
   └── *.py               # Post-processing scripts for SLiM outputs
 
 
-└── ReadyTrees/
+├──ReadyTrees/
 
     └── *.tree            # SLiM tree-sequence input files
