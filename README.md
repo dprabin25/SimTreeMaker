@@ -104,6 +104,8 @@ For **CaseStudy**, outputs go to `CaseStudy/CaseStudyTrees/`.
 For **ReadyTrees**, outputs go to `ReadyTreesOutputs/<stem>Output/`.
 
 ## Command Reference
+<img width="647" height="116" alt="image" src="https://github.com/user-attachments/assets/c1928fc5-5cd4-4161-ae69-400227c41019" />
+Make sure you are within working dir of SimTreeMaker. You can then type the following command for your prefered action. 
 
 | Command                                   | Action                                          |
 | ----------------------------------------- | ----------------------------------------------- |
