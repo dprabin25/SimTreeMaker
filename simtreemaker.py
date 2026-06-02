@@ -1,11 +1,12 @@
 """
-run_slim.py  —  SLiM Cancer Simulation Runner
+simtreemaker.py  —  SLiM Cancer Simulation Runner
 ----------------------------------------------
-Run ALL models in models.csv:
-    python run_slim.py
-
-Run a specific model by name:
-    python run_slim.py Spread
+Run a specific model by CSV name:
+    python simtreemaker.py MutationSpread
+    python simtreemaker.py ClonalGrowth
+    python simtreemaker.py Metastasis
+    python simtreemaker.py CaseStudy
+    python simtreemaker.py Tree
 
 Steps per model row:
   1. Read slim_config.txt  (SLiM exe path + working directory)
@@ -176,7 +177,7 @@ def convert_to_newick(trees_path, nwk_path, mutation_position=10000):
     try:
         from slim_newick import build_newick
     except ImportError:
-        print("[ERROR] slim_newick.py not found in the same folder as run_slim.py")
+        print("[ERROR] slim_newick.py not found in the same folder as simtreemaker.py")
         return False
     try:
         stats = build_newick(
@@ -345,208 +346,6 @@ def plot_png(nwk_path, dir_png, stem, model_name, model_type):
         print(f"[INFO] Saved: {out}")
 
 
-# ── 7. Interactive HTML tree (D3.js) ─────────────────────────────────────────
-
-def _clade_to_dict(clade):
-    """Recursively convert Bio.Phylo clade to plain dict for JSON."""
-    node = {"name": clade.name or ""}
-    if clade.clades:
-        node["children"] = [_clade_to_dict(c) for c in clade.clades]
-    return node
-
-
-def export_html(nwk_path, out_dir, stem, model_name, model_type, model_params):
-    try:
-        from Bio import Phylo
-        import json
-    except ImportError:
-        print("[ERROR] Missing biopython. Run: pip install biopython")
-        return
-
-    trees  = list(Phylo.parse(nwk_path, "newick"))
-    if not trees:
-        print("[ERROR] No trees found in Newick file.")
-        return
-
-    tree   = max(trees, key=lambda t: t.count_terminals())
-    n_tips = tree.count_terminals()
-    n_subtrees = len(trees)
-
-    tree_json = json.dumps(_clade_to_dict(tree.root), separators=(",", ":"))
-
-    # Auto-hide labels when tree is large
-    labels_default = "true" if n_tips <= 80 else "false"
-
-    subtitle = (
-        f"Largest of {n_subtrees} subtrees · {n_tips} tips  "
-        f"(increase simulationEndTick for full coalescence)"
-        if n_subtrees > 1 else f"{n_tips} tips"
-    )
-
-    params_html = "".join(
-        f"<tr><td>{k}</td><td>{v}</td></tr>"
-        for k, v in model_params.items()
-        if k not in ("ModelName", "treeOutputFile")
-    )
-
-    html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>{model_name} [{model_type}] — Cancer Phylogeny</title>
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: 'Segoe UI', sans-serif; background: #f5f7fa; display: flex; height: 100vh; overflow: hidden; }}
-  #sidebar {{
-    width: 260px; min-width: 260px; background: #1e2a3a; color: #cdd6e0;
-    display: flex; flex-direction: column; padding: 16px; overflow-y: auto;
-  }}
-  #sidebar h2 {{ color: #7eb8e8; font-size: 14px; margin-bottom: 4px; }}
-  #sidebar h3 {{ color: #fff; font-size: 13px; margin: 12px 0 6px; border-top: 1px solid #2e3f55; padding-top: 8px; }}
-  #sidebar p  {{ font-size: 11px; color: #8fa3b8; margin-bottom: 8px; }}
-  table {{ width: 100%; border-collapse: collapse; font-size: 10px; }}
-  td {{ padding: 3px 4px; border-bottom: 1px solid #2e3f55; }}
-  td:first-child {{ color: #7eb8e8; width: 55%; }}
-  td:last-child  {{ color: #e0e8f0; text-align: right; font-family: monospace; }}
-  .btn {{
-    background: #2c5f8a; color: #fff; border: none; border-radius: 4px;
-    padding: 6px 10px; cursor: pointer; font-size: 11px; margin: 3px 0; width: 100%;
-    transition: background 0.15s;
-  }}
-  .btn:hover {{ background: #3a7ab5; }}
-  #main {{ flex: 1; display: flex; flex-direction: column; overflow: hidden; }}
-  #topbar {{
-    background: #fff; border-bottom: 1px solid #dde3ec;
-    padding: 8px 16px; font-size: 12px; color: #555;
-    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  }}
-  #topbar strong {{ color: #1e2a3a; font-size: 13px; }}
-  #subtitle {{ font-size: 10px; color: #aaa; margin-left: auto; }}
-  #canvas {{ flex: 1; overflow: hidden; cursor: grab; background: #fff; }}
-  #canvas:active {{ cursor: grabbing; }}
-  .link {{ fill: none; stroke: #2c5f8a; stroke-width: 0.9px; }}
-  .node circle {{ fill: #2c5f8a; }}
-  .node text {{ font-size: 9px; font-family: monospace; fill: #333; }}
-  .tip-dot {{ r: 2.5; }}
-  .int-dot {{ r: 1.5; fill: #7eb8e8; }}
-</style>
-</head>
-<body>
-
-<div id="sidebar">
-  <h2>🧬 Cancer Phylogeny Viewer</h2>
-  <p>{model_name} &nbsp;·&nbsp; {model_type}</p>
-  <button class="btn" onclick="toggleLabels()">Toggle Tip Labels</button>
-  <button class="btn" onclick="resetZoom()">Reset View</button>
-  <button class="btn" onclick="exportSVG()">Export SVG</button>
-  <h3>Parameters</h3>
-  <table>{params_html}</table>
-</div>
-
-<div id="main">
-  <div id="topbar">
-    <strong>{model_name} [{model_type}]</strong>
-    <span id="subtitle">{subtitle}</span>
-  </div>
-  <div id="canvas"></div>
-</div>
-
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script>
-const RAW = {tree_json};
-let showLabels = {labels_default};
-
-const container = document.getElementById("canvas");
-const W = () => container.clientWidth;
-const H = () => container.clientHeight;
-
-const svg = d3.select("#canvas").append("svg")
-  .attr("width", "100%").attr("height", "100%");
-
-const zoomLayer = svg.append("g");
-
-const zoom = d3.zoom().scaleExtent([0.05, 20])
-  .on("zoom", e => zoomLayer.attr("transform", e.transform));
-svg.call(zoom);
-
-function buildTree() {{
-  zoomLayer.selectAll("*").remove();
-
-  const root   = d3.hierarchy(RAW);
-  const nTips  = root.leaves().length;
-  const treeH  = Math.max(H(), nTips * 14);
-  const treeW  = W() - 160;
-
-  const layout = d3.cluster().size([treeH, treeW]);
-  layout(root);
-
-  // Elbow connector
-  const link = zoomLayer.append("g")
-    .selectAll("path").data(root.links()).join("path")
-    .attr("class", "link")
-    .attr("d", d =>
-      `M${{d.source.y}},${{d.source.x}}` +
-      `L${{d.target.y}},${{d.source.x}}` +
-      `L${{d.target.y}},${{d.target.x}}`
-    );
-
-  const node = zoomLayer.append("g")
-    .selectAll("g").data(root.descendants()).join("g")
-    .attr("class", "node")
-    .attr("transform", d => `translate(${{d.y}},${{d.x}})`);
-
-  node.append("circle")
-    .attr("class", d => d.children ? "int-dot" : "tip-dot")
-    .attr("r",     d => d.children ? 1.5 : 2.5)
-    .attr("fill",  d => d.children ? "#7eb8e8" : "#2c5f8a");
-
-  node.filter(d => !d.children)
-    .append("text")
-    .attr("class", "tip-label")
-    .attr("x", 6).attr("dy", "0.32em")
-    .text(d => d.data.name || "")
-    .style("display", showLabels ? null : "none");
-
-  // Auto-fit
-  const bounds = zoomLayer.node().getBBox();
-  const pad = 30;
-  const scale = Math.min(
-    (W() - 2*pad) / bounds.width,
-    (H() - 2*pad) / bounds.height
-  );
-  const tx = (W() - bounds.width * scale) / 2 - bounds.x * scale + pad;
-  const ty = (H() - bounds.height * scale) / 2 - bounds.y * scale + pad;
-  svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
-}}
-
-function toggleLabels() {{
-  showLabels = !showLabels;
-  zoomLayer.selectAll(".tip-label")
-    .style("display", showLabels ? null : "none");
-}}
-
-function resetZoom() {{ buildTree(); }}
-
-function exportSVG() {{
-  const data = new XMLSerializer().serializeToString(svg.node());
-  const blob = new Blob([data], {{type: "image/svg+xml"}});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "{stem}_tree.svg";
-  a.click();
-}}
-
-buildTree();
-window.addEventListener("resize", buildTree);
-</script>
-</body>
-</html>"""
-
-    out_html = os.path.join(out_dir, f"{stem}_tree.html")
-    with open(out_html, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"[INFO] HTML viewer saved: {out_html}")
-    return out_html
 
 
 # ── 8. Run one model row ──────────────────────────────────────────────────────
@@ -766,7 +565,7 @@ def run_casestudy(work_dir, slim_exe):
 
 def run_readytrees(script_dir):
     """
-    Scans ReadyTrees/ (next to run_slim.py) for *.trees files.
+    Scans ReadyTrees/ (next to simtreemaker.py) for *.trees files.
     For each file, converts to Newick and generates 4 PNGs.
     Outputs go to ReadyTreesOutputs/{stem}Output/newick/ and pngTree/.
     """
@@ -832,7 +631,7 @@ def main():
         print("[ERROR] slim_config.txt must define SLIM_EXE.")
         sys.exit(1)
 
-    # WORK_DIR is always the folder containing run_slim.py — makes it portable
+    # WORK_DIR is always the folder containing simtreemaker.py — makes it portable
     work_dir = script_dir
     os.makedirs(work_dir, exist_ok=True)
 
@@ -850,8 +649,8 @@ def main():
     options_dir = os.path.join(work_dir, "Options")
 
     if len(sys.argv) >= 2:
-        # e.g.  python run_slim.py MutationSpread
-        #        python run_slim.py MutationSpread.csv
+        # e.g.  python simtreemaker.py MutationSpread
+        #        python simtreemaker.py MutationSpread.csv
         arg      = sys.argv[1]
         csv_name = arg if arg.endswith(".csv") else arg + ".csv"
         csv_path = os.path.join(options_dir, csv_name)
@@ -862,16 +661,9 @@ def main():
         csv_files = [csv_path]
         print(f"[INFO] Using: {csv_path}")
     else:
-        # Run ALL CSVs in Options/
-        if not os.path.isdir(options_dir):
-            print(f"[ERROR] Options folder not found: {options_dir}")
-            print("  Usage: python run_slim.py <CsvName>   e.g. MutationSpread")
-            sys.exit(1)
-        csv_files = sorted(glob.glob(os.path.join(options_dir, "*.csv")))
-        if not csv_files:
-            print(f"[ERROR] No CSV files found in {options_dir}")
-            sys.exit(1)
-        print(f"[INFO] Running all {len(csv_files)} CSV(s) in {options_dir}")
+        print("Usage: python simtreemaker.py <CsvName|CaseStudy|Tree>")
+        print("  Examples: MutationSpread, ClonalGrowth, Metastasis")
+        sys.exit(1)
 
     for csv_path in csv_files:
         models = load_all_models(csv_path)
