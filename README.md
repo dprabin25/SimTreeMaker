@@ -1,7 +1,7 @@
 # SimTreeMaker
 
 ## Dependencies
-1. Anaconda
+### Anaconda
 - Open Anaconda terminal and then create conda environment for SimTreeMaker.
 
 Please install Anaconda : https://www.anaconda.com/distribution/
@@ -13,4 +13,18 @@ conda create -n SimTreeMaker python=3.12.2 biopython=1.85 pyslim=1.1.0 tskit=0.6
 
 conda activate SimTreeMaker
 ```
+
+## Files required
+SimTreeMaker/
+  simtreemaker.py
+  slim_newick.py
+  slim_config.txt       ## edit SLIM_EXE path 
+  Options/              ## Contains paramters for simulation
+    MutationSpread.csv  ### Add/Edit paramters for Mutation spread
+    ClonalGrowth.csv    ### Add/Edit paramters for ClonalGrowth
+    Metastasis.csv      ### Add/Edit paramters for Metastasis
+  CaseStudy/            ## Case study
+   *.slim               #### Case study slim codes
+   *.py                 #### 
+  ReadyTrees/           ## drop .trees files here if you want to generate output for 
 
