@@ -16,7 +16,7 @@ conda activate SimTreeMaker
 
 ## Files required
 SimTreeMaker/
-│
+
 
 ├── simtreemaker.py        # Main pipeline script
 
@@ -25,25 +25,23 @@ SimTreeMaker/
 ├── slim_config.txt        # SLiM executable + working directory config
 
 
-│
-├── Options/               # Simulation parameters
 
-│   ├── MutationSpread.csv
+├── Options/               # Simulation parameters (Edit here for your parameters)
 
-│   ├── ClonalGrowth.csv
+  ├── MutationSpread.csv
 
-│   └── Metastasis.csv
+  ├── ClonalGrowth.csv
+
+  └── Metastasis.csv
 
 
-│
 ├── CaseStudy/
 
-│   ├── *.slim             # SLiM simulation scripts
+  ├── *.slim             # SLiM simulation scripts
 
-│   └── *.py               # Post-processing scripts for SLiM outputs
+  └── *.py               # Post-processing scripts for SLiM outputs
 
 
-│
 └── ReadyTrees/
 
-    └── *.trees            # SLiM tree-sequence input files
+    └── *.tree            # SLiM tree-sequence input files
