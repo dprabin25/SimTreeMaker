@@ -9,7 +9,7 @@ Please install Anaconda : https://www.anaconda.com/distribution/
 To create the environment, include to install correct Python version and R.
 
 ```bash
-conda create -n SimTreeMaker python=3.12.2 r-base=4.3.0 pandas -y
+conda create -n SimTreeMaker python=3.12.2  pandas -y
 
 conda activate SimTreeMaker
 ```
