@@ -100,7 +100,7 @@ For each model row processed, outputs are organized under `<ModelName>/<stem>/`:
                <stem>_vertical_no_labels.png
 ```
 
-For **CaseStudy**, outputs go to `CaseStudy/CaseStudyTrees/`.  
+For **CaseStudy**, outputs go to `CaseStudyOutputs/CaseStudyTrees/`.  
 For **ReadyTrees**, outputs go to `ReadyTreesOutputs/<stem>Output/`.
 
 ## Command Reference
