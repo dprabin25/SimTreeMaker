@@ -4,14 +4,14 @@ A pipeline for running SLiM cancer evolution simulations and converting tree seq
 
 ## Dependencies
 
-### Anaconda
+### Anaconda and R packages
 
 Install Anaconda: https://www.anaconda.com/distribution/
 
 Then create the environment:
 
 ```bash
-conda create -n SimTreeMaker -c conda-forge python=3.11 biopython=1.85 matplotlib pyslim=1.1.1 tskit=1.0.3 -y
+conda create -n SimTreeMaker -c conda-forge python=3.11 biopython=1.85 matplotlib pyslim=1.1.1 tskit=1.0.3 r-base r-ape -y
 conda activate SimTreeMaker
 ```
 
