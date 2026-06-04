@@ -22,14 +22,17 @@ SimTreeMaker/
 ├── simtreemaker.py       # Main pipeline script
 ├── slim_newick.py        # Converts SLiM tree sequences to Newick format
 ├── slim_config.txt       # SLiM executable path — only edit SLIM_EXE if path changes
-├── Options/
-│   ├── MutationSpread.csv
-│   ├── ClonalGrowth.csv
-│   └── Metastasis.csv
+├── SimOptions/
+│   ├── MutationSpread.txt
+│   ├── ClonalGrowth.txt
+│   └── Metastasis.txt
+├── TreeOptions
+│   ├── Lineage.txt
+│   ├── Snapshot.txt
 ├── CaseStudy/
-│   ├── CHIP2EnvN.slim    # Forward-time SLiM simulation script
-│   └── Slim2tree3.py     # Post-processing / tree conversion for case study
-└── ReadyTrees/           # Drop .trees files here for direct processing
+│   ├── *.slim    # Forward-time SLiM simulation script        
+└── ReadyTrees/
+    ├── *.tree            # Drop .trees files here for direct processing
 ```
 
 ## Core Files
@@ -42,14 +45,15 @@ SimTreeMaker/
 
 ## Input Files (User-Editable)
 
-| Location                     | Description                                    |
-| ---------------------------- | ---------------------------------------------- |
-| `Options/MutationSpread.csv` | Mutation dynamics simulation parameters        |
-| `Options/ClonalGrowth.csv`   | Clonal expansion simulation parameters         |
-| `Options/Metastasis.csv`     | Metastasis simulation parameters               |
-| `CaseStudy/CHIP2EnvN.slim`   | Predefined forward-time SLiM simulation        |
-| `CaseStudy/Slim2tree3.py`    | Post-processing and tree conversion            |
-| `ReadyTrees/*.trees`         | Pre-existing tree sequence files               |
+| Location                         | Description                                    |
+| -------------------------------- | ---------------------------------------------- |
+| `SimOptions/MutationSpread.txt`  | Mutation dynamics simulation parameters        |
+| `SimOptions/ClonalGrowth.txt`    | Clonal expansion simulation parameters         |
+| `SimOptions/Metastasis.csv`      | Metastasis simulation parameters               |
+| `TreeOptions/ClonalGrowth.txt`   | Clonal expansion simulation parameters         |
+| `TreeOptions/Metastasis.csv`     | Metastasis simulation parameters               |
+| `CaseStudy/*.slim`               | Predefined forward-time SLiM simulation        |
+| `ReadyTrees/*.tree`              | Pre-existing tree sequence files               |
 
 ## User Workflow Options
 
@@ -58,9 +62,19 @@ SimTreeMaker/
 Use the CSV files in `Options/` to define simulation behavior, then run using the CSV filename (without `.csv`):
 
 ```bash
-python simtreemaker.py MutationSpread
-python simtreemaker.py ClonalGrowth
-python simtreemaker.py Metastasis
+python simtreemaker.py MutationSpread_NWF Snapshot
+python simtreemaker.py MutationSpread_NWF Lineage
+python simtreemaker.py MutationSpread_WF Snapshot
+python simtreemaker.py MutationSpread_WF Lineage
+python simtreemaker.py ClonalGrowth__NWF Snapshot
+python simtreemaker.py ClonalGrowth__NWF Lineage
+python simtreemaker.py ClonalGrowth__WF Snapshot
+python simtreemaker.py ClonalGrowth__WF Lineage
+python simtreemaker.py Metastasis__NWF Snapshot
+python simtreemaker.py Metastasis__NWF Lineage
+python simtreemaker.py Metastasis__WF Snapshot
+python simtreemaker.py Metastasis__WF Lineage
+
 ```
 
 ---
