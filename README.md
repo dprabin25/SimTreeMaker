@@ -22,7 +22,6 @@ SimTreeMaker/
 ├── simtreemaker.py                    # Main pipeline script — run this
 ├── slim_newick.py                     # Converts a .trees tree sequence to Newick (Snapshot sampler)
 ├── plot_tree.R                        # R/ape tree renderer, called automatically when Rscript is available
-├── plot_figure5_comparison.R          # Optional standalone script for a Mitchell et al.-style driver-clade figure
 ├── slim_config.txt                    # SLIM_EXE path — the one file you normally need to edit
 ├── requirements.txt                   # Pinned Python package versions
 ├── SimOptions/                        # Simulation parameter files — one .txt per model
