@@ -210,7 +210,9 @@ ReadyTreesOutputs/<stem>Output/
 
 If you use SimTreeMaker in your work, please cite:
 
-> Prabin Dawadi, et al. *(citation pending — add full author list, title, and year here before publishing)*
+Savannah L. Wilson¹, Prabin Dawadi¹*, Dikshya Niraula¹, Sayaka Miura¹*
+¹Department of Biology, The University of Mississippi, University City, MS 38677, USA
+
 
 ## License
 
