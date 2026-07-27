@@ -20,7 +20,7 @@ R with the `ape` package is optional but preferred for tree plotting (`plot_tree
 ```
 SimTreeMaker/
 ├── simtreemaker.py                    # Main pipeline script — run this
-├── slim_newick.py                     # Converts a .trees tree sequence to Newick (Snapshot & Lineage samplers)
+├── slim_newick.py                     # Converts a .trees tree sequence to Newick (Snapshot sampler)
 ├── plot_tree.R                        # R/ape tree renderer, called automatically when Rscript is available
 ├── plot_figure5_comparison.R          # Optional standalone script for a Mitchell et al.-style driver-clade figure
 ├── slim_config.txt                    # SLIM_EXE path — the one file you normally need to edit
@@ -32,9 +32,8 @@ SimTreeMaker/
 │   ├── ClonalGrowth_WF.txt    / .md
 │   ├── Metastasis_NWF.txt     / .md
 │   └── Metastasis_WF.txt      / .md
-├── TreeOptions/                       # Tree-sampling parameter files
-│   ├── Snapshot.txt                   # Sample final-generation cells only
-│   └── Lineage.txt                    # Sample across all generations, recency-biased
+├── TreeOptions/
+│   └── Snapshot.txt                   # Tree-sampling parameters — final-generation cells only
 ├── CaseStudy/
 │   ├── CHIP2EnvN.slim                 # 3-gene neutral CHIP model (AGE, REP)
 │   └── Simulation4_ClonalHematopoiesis.slim   # Patient-calibrated CHIP model (AGE, DRIVER_TICK, REP)
@@ -48,25 +47,23 @@ Each `.txt` file in `SimOptions/` has a matching `.md` file with the same parame
 ## How to Run
 
 ```bash
-python simtreemaker.py <ModelName> [Snapshot|Lineage] [tree]
-python simtreemaker.py CaseStudy [Snapshot|Lineage] [tree] [KEY=VALUE ...]
+python simtreemaker.py <ModelName> [tree]
+python simtreemaker.py CaseStudy [tree] [KEY=VALUE ...]
 python simtreemaker.py Tree
 ```
 
 - **`<ModelName>`** — one of the six files in `SimOptions/` (without `.txt`): `MutationSpread_NWF`, `MutationSpread_WF`, `ClonalGrowth_NWF`, `ClonalGrowth_WF`, `Metastasis_NWF`, `Metastasis_WF`.
-- **`Snapshot` / `Lineage`** — which tree-sampling strategy to use (reads `TreeOptions/Snapshot.txt` or `Lineage.txt`). Defaults to `Snapshot` if omitted.
 - **`tree`** — skip re-running SLiM and just rebuild the Newick tree/PNGs from an existing `.tree` file.
-- **`KEY=VALUE`** *(CaseStudy only)* — overrides one of the SLiM script's `-d` constants (e.g. `AGE=100`, `REP=1`, `DRIVER_TICK=38`). See **CaseStudy parameters** below — this is required if you want to change patient age, driver-mutation timing, or replicate number; the script will otherwise silently use its built-in defaults.
+- **`KEY=VALUE`** *(CaseStudy only)* — overrides one of the SLiM script's `-d` constants (e.g. `AGE=100`, `REP=1`, `DRIVER_TICK=38`). See **CaseStudy** below — this is required if you want to change patient age, driver-mutation timing, or replicate number; the script will otherwise silently use its built-in defaults.
 
 Examples:
 
 ```bash
 python simtreemaker.py MutationSpread_NWF
-python simtreemaker.py MutationSpread_NWF Lineage
-python simtreemaker.py MutationSpread_NWF Snapshot tree
-python simtreemaker.py CaseStudy Snapshot
-python simtreemaker.py CaseStudy Snapshot AGE=100 REP=1
-python simtreemaker.py CaseStudy Lineage DRIVER_TICK=50 AGE=90 REP=3
+python simtreemaker.py MutationSpread_NWF tree
+python simtreemaker.py CaseStudy
+python simtreemaker.py CaseStudy AGE=100 REP=1
+python simtreemaker.py CaseStudy DRIVER_TICK=50 AGE=90 REP=3
 python simtreemaker.py Tree
 ```
 
@@ -144,22 +141,15 @@ Each `.txt` file configures one cancer-evolution model as `key = value` pairs (o
 | `migrationStartTick` / `migrationEndTick` *(WF)* | Window during which the p1→p2 migration rate is active. Set equal for a single-generation pulse. |
 | `migrationRate` *(WF)* | Fraction of p1 that migrates to p2 per generation while active (e.g. `0.01` = 1%/gen). |
 
-## TreeOptions/*.txt — Tree Sampling Reference
+## TreeOptions/Snapshot.txt — Tree Sampling Reference
 
-Controls how cells are subsampled from a `.trees` file to build the Newick tree. Selected on the command line (`Snapshot` or `Lineage`); defaults to `Snapshot`.
+Controls how cells are subsampled from a `.trees` file to build the Newick tree. Snapshot samples only cells alive at the final generation (like a biopsy) — good for comparing subclones and VAF-style analysis.
 
-| File | Strategy | Best for |
-| --- | --- | --- |
-| `Snapshot.txt` | Only cells alive at the final generation (like a biopsy) | Comparing subclones, VAF-style analysis |
-| `Lineage.txt` | Cells across all generations, recency-biased | Timing mutations, phylodynamics |
-
-| Parameter | In | Description |
-| --- | --- | --- |
-| `valid_pops` | both | Which populations to include. `all`, `1` (primary only), `2` (metastatic only), or `1,2` (both — use for metastasis models). |
-| `snapshotSamples` | Snapshot | Max cells drawn from the final generation (all alive cells are used if fewer exist). |
-| `max_samples_per_generation` | Lineage | Max cells drawn from the most recent generation; older generations get proportionally fewer. |
-| `min_samples_per_generation` | Lineage | Minimum cells required for a generation to be included — sparser generations are skipped. |
-| `seed` | both | Integer seed for reproducible sampling, or `none` for a different random sample each run. |
+| Parameter | Description |
+| --- | --- |
+| `valid_pops` | Which populations to include. `all`, `1` (primary only), `2` (metastatic only), or `1,2` (both — use for metastasis models). |
+| `snapshotSamples` | Max cells drawn from the final generation (all alive cells are used if fewer exist). |
+| `seed` | Integer seed for reproducible sampling, or `none` for a different random sample each run. |
 
 ## CaseStudy — Predefined SLiM Scripts
 
@@ -177,18 +167,18 @@ Controls how cells are subsampled from a `.trees` file to build the Newick tree.
 | `Simulation4_ClonalHematopoiesis.slim` | `AGE` (default `81`), `DRIVER_TICK` (default `38`), `REP` (default `1`) | `AGE` = patient age / generation the simulation stops at. `DRIVER_TICK` = generation the driver mutation (`m2`, s=0.6) is introduced into a random newborn cell. `REP` = replicate label. Modeled after Mitchell et al. 2022 (*Nature*): default values represent an 81-year-old patient with the driver acquired at generation 38. |
 
 ```bash
-python simtreemaker.py CaseStudy Snapshot AGE=100 REP=1
-python simtreemaker.py CaseStudy Lineage DRIVER_TICK=50 AGE=90 REP=3
+python simtreemaker.py CaseStudy AGE=100 REP=1
+python simtreemaker.py CaseStudy DRIVER_TICK=50 AGE=90 REP=3
 ```
 
 Any constants you don't override keep the script's built-in default. Passing `KEY=VALUE` applies to *every* `.slim` script run that call — a script that doesn't declare that constant simply ignores it.
 
 ## Outputs
 
-**Named-model runs** (`MutationSpread_NWF`, etc.) — output to `<ModelName>/<Mode>/`:
+**Named-model runs** (`MutationSpread_NWF`, etc.) — output to `<ModelName>/Snapshot/`:
 
 ```
-<ModelName>/<Mode>/
+<ModelName>/Snapshot/
 ├── tree/      <treeOutputFile>.tree
 ├── newick/    <treeOutputFile>.nwk
 ├── pngTree/   <stem>_horizontal_labels.png / _no_labels.png
@@ -196,10 +186,10 @@ Any constants you don't override keep the script's built-in default. Passing `KE
 └── log.txt    parameters, SLiM command, and SLiM output for this run
 ```
 
-**CaseStudy** — output to `CaseStudyOutputs/<script>_<overrides>/<Mode>/`, e.g. `CaseStudyOutputs/Simulation4_ClonalHematopoiesis_AGE81_DRIVER_TICK38_REP1/Snapshot/`. The `<overrides>` suffix records every `-d` constant used for that run, so different `AGE`/`REP`/`DRIVER_TICK` combinations never overwrite each other:
+**CaseStudy** — output to `CaseStudyOutputs/<script>_<overrides>/Snapshot/`, e.g. `CaseStudyOutputs/Simulation4_ClonalHematopoiesis_AGE81_DRIVER_TICK38_REP1/Snapshot/`. The `<overrides>` suffix records every `-d` constant used for that run, so different `AGE`/`REP`/`DRIVER_TICK` combinations never overwrite each other:
 
 ```
-CaseStudyOutputs/<script>_<overrides>/<Mode>/
+CaseStudyOutputs/<script>_<overrides>/Snapshot/
 ├── newick/    <stem>.nwk
 ├── pngTree/   <stem>_horizontal_labels.png / _no_labels.png / _vertical_*.png
 └── log.txt
