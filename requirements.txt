@@ -1,0 +1,3 @@
+biopython==1.85
+pyslim==1.1.0
+tskit==0.6.4
