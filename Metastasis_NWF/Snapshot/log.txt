@@ -1,0 +1,32 @@
+
+=== Run: 2026-07-18 09:33:34.363095 ===
+Model : Metastasis_NWF [nonWF]
+
+Command:
+  /usr/local/bin/slim Metastasis_NWF.slim -d ModelName=Metastasis_NWF -d modelType=nonWF -d mutationRate=0 -d m1_dominance=0.5 -d m1_effect=0.0 -d m2_dominance=0.5 -d m2_effect=0.6 -d m2_convertToSubstitution=F -d m1_proportion=0.001 -d chromosomeEnd=99999 -d recombinationRate=0 -d initialPopSize=1 -d initialPop2Size=0 -d cloneCount=2 -d targetSize=150 -d maxAge=2 -d mutationIntroTick=10 -d mutationPosition=10000 -d migrationTick=30 -d migrantCount=1 -d simulationEndTick=100 -d treeOutputFile=Metastasis_NWF -d valid_pops=1,2 -d max_samples_per_generation=5 -d min_samples_per_generation=1
+
+SLiM output:
+// Initial random seed:
+1460732881727295774
+
+// RunInitializeCallbacks():
+initializeSLiMModelType(modelType = 'nonWF');
+initializeTreeSeq();
+initializeMutationRate(0);
+initializeMutationType(1, 0.5, "f", 0);
+initializeMutationType(2, 0.5, "f", 0.6);
+initializeGenomicElementType(1, m1, 0.001);
+initializeGenomicElement(g1, 0, 99999);
+initializeRecombinationRate(0);
+
+// Starting run at tick <start>:
+1 
+
+SLiM done. Tree written to: /Users/prabin/Claude/Projects/SLIMcancer/SimTreeMaker/Metastasis_NWF/Snapshot/tree/Metastasis_NWF.tree
+
+Outputs:
+  Metastasis_NWF/Snapshot/tree/    Metastasis_NWF.tree
+  Metastasis_NWF/Snapshot/newick/  Metastasis_NWF.nwk
+  Metastasis_NWF/Snapshot/pngTree/ Metastasis_NWF_horizontal_labels.png / _no_labels.png
+  Metastasis_NWF/Snapshot/pngTree/ Metastasis_NWF_vertical_labels.png   / _no_labels.png
+  Metastasis_NWF/Snapshot/log.txt
