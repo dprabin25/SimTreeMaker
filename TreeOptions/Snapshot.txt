@@ -1,0 +1,18 @@
+# Snapshot — Final-generation sampling
+# Samples only cells alive at the END of the simulation (like a biopsy).
+# Edit the VALUE column only. Descriptions are after the #.
+#
+# PARAMETER                  = VALUE                # DESCRIPTION
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Population filter ──────────────────────────────────────────────────────
+valid_pops                   = 1,2                  # Which tumour populations to include in the tree: "all" = every population, 1 = primary tumour only, 2 = metastatic site only, 1,2 = both (use 1,2 for metastasis models; use 1 for single-population models)
+# ───────────────────────────────────────────────────────────────────────────
+
+# ── Sample size ────────────────────────────────────────────────────────────
+snapshotSamples              = 400                 # Max cells drawn from the final generation (takes all if fewer)
+# ───────────────────────────────────────────────────────────────────────────
+
+# ── Reproducibility ────────────────────────────────────────────────────────
+seed                         = 42                  # Random seed for sampling (any integer) — set to none for a different tree each run
+# ───────────────────────────────────────────────────────────────────────────
