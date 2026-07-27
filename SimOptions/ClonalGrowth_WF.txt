@@ -1,0 +1,61 @@
+# ClonalGrowth — WF (Wright-Fisher)  |  Sample 2 WF
+# Edit the VALUE column only. Descriptions are after the #.
+#
+# PARAMETER                  = VALUE          # DESCRIPTION
+# ──────────────────────────────────────────────────────────────────────────────
+
+ModelName                    = ClonalGrowth_WF      # Output folder and log label (no spaces)
+modelType                    = WF                   # WF = fixed pop size | nonWF = explicit birth/death
+
+mutationRate                 = 0                    # Background mutation rate per base per generation (0 = off)
+
+m1_dominance                 = 0.5                  # Neutral mutation (m1) dominance: 0=recessive, 0.5=co-dominant, 1=dominant
+m1_effect                    = 0.0                  # Neutral mutation fitness effect (0.0 = no effect on survival)
+
+m2_dominance                 = 0.5                  # Driver mutation (m2) dominance
+m2_effect                    = 0.3                  # Driver fitness advantage (0.3 = cells with m2 are 30% more fit)
+m2_convertToSubstitution     = F                    # F = keep tracking m2 after fixation | T = remove once fixed in all cells
+
+m1_proportion                = 0.001                # Fraction of genomic sites typed as m1
+chromosomeEnd                = 99999                # Chromosome length minus 1  (99999 = 100,000 bp)
+recombinationRate            = 0                    # Recombination rate per base (0 = clonal, no crossing over)
+
+# ── Growth parameters ──────────────────────────────────────────────────────
+initialPopSize               = 1                    # Starting population size at generation 1 (starts with 1 cell, then grows exponentially via growthRate)
+growthAcc                    = 1.0                  # Initial growth accumulator (1.0 = growth starts immediately)
+growthRate                   = 1.05                 # Per-generation exponential growth multiplier for p1 (1.05 = 5% growth/gen)
+growthStartTick              = 2                    # First generation of exponential growth for p1
+growthEndTick                = 80                   # Last generation of exponential growth for p1
+# ───────────────────────────────────────────────────────────────────────────
+
+# ── First driver mutation ──────────────────────────────────────────────────
+mutationIntroTick            = 10                   # Generation when first driver mutation (m2) is seeded
+mutationPosition             = 5000                 # Chromosome position where m2 is placed (0 – chromosomeEnd)
+mutationSpreadStart          = 20                   # First generation where m2 is copied into another random cell
+mutationSpreadEnd            = 50                   # Last generation of the first spreading window
+# ───────────────────────────────────────────────────────────────────────────
+
+# ── Population split (metastasis event) ───────────────────────────────────
+populationSplitTick          = 81                   # Generation when cells from p1 are split off to form p2
+splitPopSize                 = 2                    # Number of cells seeded into p2 at split
+# ───────────────────────────────────────────────────────────────────────────
+
+# ── Second driver mutation ─────────────────────────────────────────────────
+secondMutationTick           = 95                   # Generation when second driver mutation is seeded in p1
+secondMutationPosition       = 5000                 # Chromosome position for second mutation
+secondSpreadStart            = 100                  # First generation of second mutation spreading
+secondSpreadEnd              = 150                  # Last generation of second mutation spreading
+# ───────────────────────────────────────────────────────────────────────────
+
+# ── p2 growth ──────────────────────────────────────────────────────────────
+pop2GrowthStartTick          = 95                   # First generation of exponential growth for p2
+pop2GrowthEndTick            = 170                  # Last generation of exponential growth for p2
+# ───────────────────────────────────────────────────────────────────────────
+
+simulationEndTick            = 200                  # Generation when simulation stops and the tree file is saved
+treeOutputFile               = ClonalGrowth_WF      # Base name for output files (tree, newick, PNG folders)
+
+# ── Tree sampling (controls slim_newick.py) ────────────────────────────────
+valid_pops                   = 1,2            # SLiM population IDs to include in tree: "all" or e.g. 1,2  (p1=1, p2=2)
+max_samples_per_generation   = 5              # Max cells drawn per generation (recent gens get this many)
+min_samples_per_generation   = 1              # Min cells per generation — generations with fewer cells are skipped
