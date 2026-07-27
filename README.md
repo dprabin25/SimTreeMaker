@@ -25,12 +25,12 @@ SimTreeMaker/
 ├── slim_config.txt                    # SLIM_EXE path — the one file you normally need to edit
 ├── requirements.txt                   # Pinned Python package versions
 ├── SimOptions/                        # Simulation parameter files — one .txt per model
-│   ├── MutationSpread_NWF.txt / .md
-│   ├── MutationSpread_WF.txt  / .md
-│   ├── ClonalGrowth_NWF.txt   / .md
-│   ├── ClonalGrowth_WF.txt    / .md
-│   ├── Metastasis_NWF.txt     / .md
-│   └── Metastasis_WF.txt      / .md
+│   ├── MutationSpread_NWF.txt 
+│   ├── MutationSpread_WF.txt  
+│   ├── ClonalGrowth_NWF.txt   
+│   ├── ClonalGrowth_WF.txt    
+│   ├── Metastasis_NWF.txt     
+│   └── Metastasis_WF.txt      
 ├── TreeOptions/
 │   └── Snapshot.txt                   # Tree-sampling parameters — final-generation cells only
 ├── CaseStudy/
