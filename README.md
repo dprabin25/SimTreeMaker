@@ -210,7 +210,10 @@ ReadyTreesOutputs/<stem>Output/
 If you use SimTreeMaker in your work, please cite:
 
 Savannah L. Wilson¹, Prabin Dawadi¹*, Dikshya Niraula¹, Sayaka Miura¹*
+
 ¹Department of Biology, The University of Mississippi, University City, MS 38677, USA
+
+(Under review)
 
 
 ## License
