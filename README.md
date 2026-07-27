@@ -56,7 +56,7 @@ Examples:
 
 ```bash
 python simtreemaker.py MutationSpread_NWF
-python simtreemaker.py MutationSpread_NWF tree
+python simtreemaker.py Metastasis_NWF
 python simtreemaker.py CaseStudy
 python simtreemaker.py CaseStudy AGE=100 REP=1
 python simtreemaker.py CaseStudy DRIVER_TICK=50 AGE=90 REP=3
