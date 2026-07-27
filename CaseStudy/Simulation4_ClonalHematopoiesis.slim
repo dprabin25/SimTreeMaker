@@ -1,0 +1,70 @@
+//slim -d AGE=81 -d DRIVER_TICK=38 -d REP=1 Simulation4_ClonalHematopoiesis.slim
+//SLiM version 5.1
+// Simulation 4 — Clonal hematopoiesis: a patient-calibrated case study (default: 81-year-old
+// male, modeled after Mitchell et al. 2022, Nature). AGE and DRIVER_TICK are overridable so
+// the same script can model a different patient's age / driver-acquisition timing.
+//
+// A single ancestral hematopoietic stem cell expands to a target population of 100,000 cells
+// under fitness-based proliferation control. A low background neutral mutation rate
+// (mu = 1e-8) models the gradual accumulation of passenger somatic mutations during normal
+// hematopoietic turnover prior to driver mutation acquisition; cell removal after 35
+// generations approximates age-related hematopoietic stem cell attrition. At generation
+// DRIVER_TICK, a driver mutation (m2; s = 0.6) is introduced into a randomly sampled newborn
+// cell, simulating the emergence of a selectively advantageous clone. The simulation runs
+// through generation AGE, aligning the simulated timescale with the patient's age at sampling.
+
+initialize() {
+    initializeSLiMModelType("nonWF");
+    initializeTreeSeq();
+    initializeMutationRate(1e-8);
+    initializeMutationType("m1", 0.5, "f", 0.0);   // neutral passenger mutation
+    m1.convertToSubstitution = F;
+    initializeMutationType("m2", 0.5, "f", 0.6);   // driver mutation, s = 0.6
+    m2.convertToSubstitution = F;
+    initializeGenomicElementType("g1", m1, 0.001);
+    initializeGenomicElement(g1, 0, 99999);
+    initializeRecombinationRate(0);
+}
+
+1 early() {
+    sim.addSubpop("p1", 1); // single ancestral hematopoietic stem cell
+}
+
+reproduction() {
+    subpop.addCloned(individual);
+}
+
+early() {
+    targetSize = 100000;
+    popSize = p1.individualCount;
+    p1.fitnessScaling = targetSize / popSize;
+    for (ind in p1.individuals) {
+        if (ind.age >= 35) {
+            ind.fitnessScaling = 0.0;
+        }
+    }
+}
+
+// Tick range 1:500 is a generous literal upper bound so SLiM knows how long to run for —
+// without at least one tick-specific declaration beyond "1 early()", SLiM has no way to infer
+// the intended run length and will stop after tick 1. The actual endpoint is still controlled
+// by AGE below (must be <= 500).
+1:500 late() {
+    if (sim.cycle == DRIVER_TICK) {
+        inds = p1.individuals;
+        newborns = inds[inds.age == 0];
+        if (size(newborns) > 0) {
+            ind = sample(newborns, 1);
+            hapIndex = sample(0:1, 1);
+            genome = ind.haplosomes[hapIndex];
+            genome.addNewDrawnMutation(m2, 10000);
+            catn("Driver mutation (m2) introduced at generation " + DRIVER_TICK + ".");
+        }
+    }
+    if (sim.cycle == AGE) {
+        outFile = "CaseStudyOutputs/Sim4_CHIP" + AGE + "_rep" + REP + ".trees";
+        sim.treeSeqOutput(outFile);
+        catn("SLiM done. Tree written to: " + outFile);
+        sim.simulationFinished();
+    }
+}
