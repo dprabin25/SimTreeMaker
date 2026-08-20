@@ -1,0 +1,66 @@
+# TG (TumorGrowth) — simtreemaker.py runs TG.slim by default (no
+# migration). When migrationEnabled = T, simtreemaker.py generates
+# TG_Migration.slim from TG.slim (via generate_migration_slim.py) and runs
+# that instead. migrationEnabled is read by Python only — it is never
+# passed to SLiM as a -d flag, since neither TG.slim nor TG_Migration.slim
+# has a migrationEnabled symbol.
+#
+# PARAMETER          = VALUE      # DESCRIPTION
+# ──────────────────────────────────────────────────────────────────────────
+
+mutationRate          = 1e-8          # Background (m1) mutation rate per base per generation, positions 0-49999 only. 1e-8 is the standard textbook per-base point-mutation rate used in population-genetics simulations (comparable to commonly cited human germline estimates) — used here as a defensible default rather than an arbitrary guess. Set to 0 to disable background mutations entirely.
+driverMutationRate    = 1e-8          # Spontaneous driver (m2) mutation rate per base per generation, positions 50001-99999 only (the g2 region). There is no guaranteed founder driver in TG.slim — every m2 driver, including the first, arises spontaneously at this rate. Set to 0 to disable drivers entirely (no m2 mutations will ever occur).
+m2_dominance          = 0.5           # Driver mutation (m2) dominance
+m2_effect             = 0.6           # Driver fitness advantage (0.6 = cells with m2 are 60% more fit)
+
+initialPopSize        = 1             # Number of founder cells at generation 1 (in p1)
+targetSize            = 150           # Carrying capacity for p1
+Pop1SampleCells       = 400           # Cells sampled from p1's survivors at simulationEndTick, for the Newick tree + SNV CSV (overrides the pooled snapshotSamples cap in TreeOptions/Snapshot.txt for p1 specifically)
+
+mutationPosition      = 50000         # Legacy: TG.slim no longer places anything at this position (no founder driver — see driverMutationRate above). NOT passed to SLiM. Kept only as a fallback for the Python side's m1/m2 labeling in case a .trees file is ever read back without SLiM's own mutation-type metadata; real TG.slim runs always carry that metadata, so this value has no effect in practice.
+simulationEndTick     = 200           # Generation when simulation stops and the tree is saved
+treeOutputFile        = TumorGrowth   # Base name for output files (tree, newick, PNG)
+
+# ── Migration (Python-only switch — see header note above) ─────────────────
+migrationEnabled      = F             # T = simtreemaker.py generates/runs TG_Migration.slim (adds p2, p3, p4...); F = runs TG.slim, p1 only (default)
+#
+# Reference table — the actual key = value lines Python reads are below;
+# this is just a side-by-side view of the same values.
+#
+#  PARAMETER          Pop2      Pop3      Pop4      DESCRIPTION
+#  ──────────────────────────────────────────────────────────────────────────
+#  Time                50        100       125       Generation the population is created and seeded with migrants, on the same tick clock p1 uses
+#  IniPopSize          5         5         5         Migrants pulled from PopOrigin at creation
+#  TargetSize          100       80        150       Carrying capacity thereafter
+#  MigrationRate       0.01      0.01      0.01      Per-origin-individual probability of migrating in, each generation after creation (the generated script computes this fresh every generation on its own — nothing for you to run by hand; see note below)
+#  SampleCells         1       1      1      Cells sampled from this population's survivors at simulationEndTick, for the Newick tree + SNV CSV
+#  PopOrigin           Pop1      Pop1      Pop3      Which population this one migrates from — p1 has no PopOrigin (it's the root); p4 sources from Pop3 here, but any pN can point at any earlier-existing population
+#
+# Note on MigrationRate: SLiM only has a *built-in* automatic migration
+# matrix for WF models. This is a nonWF model, so that doesn't apply —
+# instead, generate_migration_slim.py writes the per-generation migrant
+# draw directly into TG_Migration.slim's code (rbinom() each generation).
+# That's automatic once generated; you're not expected to compute or run
+# anything by hand — "manual" here describes how the .slim script itself
+# works internally, not an action you need to take.
+
+Pop2Origin            = Pop1
+Pop2Time              = 50
+Pop2IniPopSize        = 5
+Pop2TargetSize        = 100
+Pop2MigrationRate     = 0.01
+Pop2SampleCells       = 100
+
+Pop3Origin            = Pop1
+Pop3Time              = 100
+Pop3IniPopSize        = 5
+Pop3TargetSize        = 80
+Pop3MigrationRate     = 0.01
+Pop3SampleCells       = 100
+
+Pop4Origin            = Pop3
+Pop4Time              = 125
+Pop4IniPopSize        = 5
+Pop4TargetSize        = 150
+Pop4MigrationRate     = 0.01
+Pop4SampleCells       = 100

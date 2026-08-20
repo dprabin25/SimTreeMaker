@@ -1,0 +1,99 @@
+
+=== simtreemaker.py Run: 2026-08-17 16:14:35.461808 ===
+Script      : TG_Migration_gud4bze9.slim  (config: config.txt, migration: True)
+SLiM command: C:\Users\newfaculty\anaconda3\envs\SimTreeMaker\Library\bin\slim.exe -d initialPopSize=1 -d targetSize=150 -d mutationRate=1e-8 -d driverMutationRate=1e-8 -d m2_dominance=0.5 -d m2_effect=0.6 -d simulationEndTick=200 -d treesPath='C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees' -d Pop2Time=50 -d Pop2IniPopSize=5 -d Pop2TargetSize=100 -d Pop2MigrationRate=0.01 -d Pop2Origin=1 -d Pop3Time=100 -d Pop3IniPopSize=5 -d Pop3TargetSize=80 -d Pop3MigrationRate=0.01 -d Pop3Origin=1 -d Pop4Time=125 -d Pop4IniPopSize=5 -d Pop4TargetSize=150 -d Pop4MigrationRate=0.01 -d Pop4Origin=3 TG_Migration_gud4bze9.slim
+Status      : OK
+SLiM output:
+// Initial random seed:
+233678134
+
+// RunInitializeCallbacks():
+initializeSLiMModelType(modelType = 'nonWF');
+initializeTreeSeq();
+initializeMutationRate(c(1e-08, 1e-08), c(49999, 99999));
+initializeMutationType(1, 0.5, "f", 0);
+initializeMutationType(2, 0.5, "f", 0.6);
+initializeGenomicElementType(1, m1, 1);
+initializeGenomicElementType(2, m2, 1);
+initializeGenomicElement(g1, 0, 49999);
+initializeGenomicElement(g2, 50001, 99999);
+initializeRecombinationRate(0);
+#WARNING (Species::RunInitializeCallbacks): with tree-sequence recording enabled and a non-zero mutation rate, a neutral mutation type was defined and used; this is legal, but usually undesirable, since neutral mutations can be overlaid later using the tree-sequence information.
+
+// Starting run at tick <start>:
+1 
+
+SLiM done. Tree written to: C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees
+
+Outputs:
+  C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\newick\TumorGrowth.nwk
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\snv\TumorGrowth_snv.csv
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\pngTree/TumorGrowth_horizontal_labels.png
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\pngTree/TumorGrowth_horizontal_no_labels.png
+
+=== simtreemaker.py Run: 2026-08-17 16:15:42.517236 ===
+Script      : TG_Migration_zzn_n3ee.slim  (config: config.txt, migration: True)
+SLiM command: C:\Users\newfaculty\anaconda3\envs\SimTreeMaker\Library\bin\slim.exe -d initialPopSize=1 -d targetSize=150 -d mutationRate=1e-8 -d driverMutationRate=1e-8 -d m2_dominance=0.5 -d m2_effect=0.6 -d simulationEndTick=200 -d treesPath='C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees' -d Pop2Time=50 -d Pop2IniPopSize=5 -d Pop2TargetSize=100 -d Pop2MigrationRate=0.01 -d Pop2Origin=1 -d Pop3Time=100 -d Pop3IniPopSize=5 -d Pop3TargetSize=80 -d Pop3MigrationRate=0.01 -d Pop3Origin=1 -d Pop4Time=125 -d Pop4IniPopSize=5 -d Pop4TargetSize=150 -d Pop4MigrationRate=0.01 -d Pop4Origin=3 TG_Migration_zzn_n3ee.slim
+Status      : OK
+SLiM output:
+// Initial random seed:
+490254357
+
+// RunInitializeCallbacks():
+initializeSLiMModelType(modelType = 'nonWF');
+initializeTreeSeq();
+initializeMutationRate(c(1e-08, 1e-08), c(49999, 99999));
+initializeMutationType(1, 0.5, "f", 0);
+initializeMutationType(2, 0.5, "f", 0.6);
+initializeGenomicElementType(1, m1, 1);
+initializeGenomicElementType(2, m2, 1);
+initializeGenomicElement(g1, 0, 49999);
+initializeGenomicElement(g2, 50001, 99999);
+initializeRecombinationRate(0);
+#WARNING (Species::RunInitializeCallbacks): with tree-sequence recording enabled and a non-zero mutation rate, a neutral mutation type was defined and used; this is legal, but usually undesirable, since neutral mutations can be overlaid later using the tree-sequence information.
+
+// Starting run at tick <start>:
+1 
+
+SLiM done. Tree written to: C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees
+
+Outputs:
+  C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\newick\TumorGrowth.nwk
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\snv\TumorGrowth_snv.csv
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\pngTree/TumorGrowth_horizontal_labels.png
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\pngTree/TumorGrowth_horizontal_no_labels.png
+
+=== simtreemaker.py Run: 2026-08-17 16:51:24.849723 ===
+Script      : TG_Migration_g4z1rt9x.slim  (config: config.txt, migration: True)
+SLiM command: C:\Users\newfaculty\anaconda3\envs\SimTreeMaker\Library\bin\slim.exe -d initialPopSize=1 -d targetSize=150 -d mutationRate=1e-8 -d driverMutationRate=1e-8 -d m2_dominance=0.5 -d m2_effect=0.6 -d simulationEndTick=200 -d treesPath='C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees' -d Pop2Time=50 -d Pop2IniPopSize=5 -d Pop2TargetSize=100 -d Pop2MigrationRate=0.01 -d Pop2Origin=1 -d Pop3Time=100 -d Pop3IniPopSize=5 -d Pop3TargetSize=80 -d Pop3MigrationRate=0.01 -d Pop3Origin=1 -d Pop4Time=125 -d Pop4IniPopSize=5 -d Pop4TargetSize=150 -d Pop4MigrationRate=0.01 -d Pop4Origin=3 TG_Migration_g4z1rt9x.slim
+Status      : OK
+SLiM output:
+// Initial random seed:
+140558442
+
+// RunInitializeCallbacks():
+initializeSLiMModelType(modelType = 'nonWF');
+initializeTreeSeq();
+initializeMutationRate(c(1e-08, 1e-08), c(49999, 99999));
+initializeMutationType(1, 0.5, "f", 0);
+initializeMutationType(2, 0.5, "f", 0.6);
+initializeGenomicElementType(1, m1, 1);
+initializeGenomicElementType(2, m2, 1);
+initializeGenomicElement(g1, 0, 49999);
+initializeGenomicElement(g2, 50001, 99999);
+initializeRecombinationRate(0);
+#WARNING (Species::RunInitializeCallbacks): with tree-sequence recording enabled and a non-zero mutation rate, a neutral mutation type was defined and used; this is legal, but usually undesirable, since neutral mutations can be overlaid later using the tree-sequence information.
+
+// Starting run at tick <start>:
+1 
+
+SLiM done. Tree written to: C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees
+
+Outputs:
+  C:/Users/newfaculty/Claude/Projects/Cancer/TumorGrowth/TG/Migration/TumorGrowth.trees
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\newick\TumorGrowth.nwk
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\snv\TumorGrowth_snv.csv
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\pngTree/TumorGrowth_horizontal_labels.png
+  C:\Users\newfaculty\Claude\Projects\Cancer\TumorGrowth\TG\Migration\pngTree/TumorGrowth_horizontal_no_labels.png

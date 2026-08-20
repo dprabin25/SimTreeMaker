@@ -1,0 +1,11 @@
+
+SLIM_EXE = C:\Users\newfaculty\anaconda3\envs\SimTreeMaker\Library\bin\slim.exe
+# Was /Users/prabin/miniconda3/envs/SimTreeMaker/bin/slim (Mac path from the
+# original setup). Updated to the Windows conda-forge SimTreeMaker env build
+# for newfaculty's machine (found via `where slim`).
+# Was /usr/local/bin/slim (SLiM 5.2 — that build silently stopped nonWF runs
+# after tick 1 on this machine, with no error). Switched to the conda-forge
+# 5.1 build in the SimTreeMaker env after confirming that fixed it.
+
+# Working directory (current folder where script is executed)
+WORK_DIR = .

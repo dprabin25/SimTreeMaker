@@ -1,0 +1,8 @@
+SLIM_EXE = /path/to/your/slim.exe
+# Copy this file to slim_config.txt in this same folder (that copy is
+# gitignored, since the path below is specific to each machine) and set
+# SLIM_EXE to your own local SLiM install path — found via `where slim`
+# (Windows) or `which slim` (Mac/Linux) with the right environment active.
+
+# Working directory (current folder where script is executed)
+WORK_DIR = .

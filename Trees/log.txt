@@ -1,0 +1,9 @@
+
+=== process_trees.py: Sim4_CHIP85_rep2  2026-08-17 17:19:03.090120 ===
+Source .trees: C:\Users\newfaculty\Claude\Projects\Cancer\Trees\Sim4_CHIP85_rep2.trees
+Status       : OK
+Outputs:
+  C:\Users\newfaculty\Claude\Projects\Cancer\Trees\newick\Sim4_CHIP85_rep2.nwk
+  C:\Users\newfaculty\Claude\Projects\Cancer\Trees\snv\Sim4_CHIP85_rep2_snv.csv
+  C:\Users\newfaculty\Claude\Projects\Cancer\Trees\pngTree/Sim4_CHIP85_rep2_horizontal_labels.png
+  C:\Users\newfaculty\Claude\Projects\Cancer\Trees\pngTree/Sim4_CHIP85_rep2_horizontal_no_labels.png

@@ -1,0 +1,130 @@
+//SLiM version 5.1
+//
+// TG — no-migration, single-population TumorGrowth backbone.
+//
+// This file has NO migration branching at all — there is no
+// migrationEnabled flag, no p2/p3 code, nothing conditional. It is the
+// backbone that generate_migration_slim.py reads to build a migration
+// variant (TG_Migration.slim) by inserting Eidos code at the
+// "//Add migration setting if any//" marker in early() below. That
+// marker is otherwise inert — three comment lines, no behavior change —
+// so running TG.slim directly always means no migration, full stop.
+//
+// Migration is Python-only: there is no supported way to turn migration
+// on by hand-typing extra -d flags at this file. Use simtreemaker.py:
+//
+//   python simtreemaker.py              — no migration (runs TG.slim)
+//   python simtreemaker.py migration    — migration (generates/refreshes
+//                                          TG_Migration.slim from this file,
+//                                          then runs that instead)
+//
+// Growth model: every individual produces exactly one cloned offspring per
+// generation (reproduction() below) and is NOT explicitly killed afterward
+// — population size is regulated entirely by nonWF density-dependent
+// viability selection via fitnessScaling (early() below), not by a forced
+// per-age-cohort kill. There is no guaranteed founder driver mutation
+// either — all m2 driver mutations arise spontaneously via
+// driverMutationRate in the g2 region (positions 50001-99999); nothing is
+// manually placed at generation 1.
+//
+// Required -d constants:
+//   initialPopSize, targetSize, mutationRate, driverMutationRate,
+//   m2_dominance, m2_effect, simulationEndTick, treesPath
+//
+//   Direct terminal run:
+//     slim -d initialPopSize=1 -d targetSize=150 -d mutationRate=1e-8 \
+//          -d driverMutationRate=1e-8 -d m2_dominance=0.5 -d m2_effect=0.6 \
+//          -d simulationEndTick=200 -d treesPath="'TG.trees'" \
+//          TG.slim
+//
+// Running this file in SLiMgui (or via `slim` with no -d flags) will fail
+// with "undefined identifier" errors — that's expected; supply all eight
+// -d flags listed above.
+
+initialize() {
+    // ---- Parameters (supplied via -d — do NOT defineConstant() these here;
+    // SLiM errors with "constant already defined" if a name is both
+    // defineConstant()'d and passed via -d) ----
+    //   initialPopSize      — founder cells in p1
+    //   targetSize          — carrying capacity for p1
+    //   mutationRate        — background per-base mutation rate (m1, positions 0-49999); 0 = off
+    //   driverMutationRate  — spontaneous driver mutation rate (m2, positions 50001-99999); 0 = off (no drivers at all)
+    //   m2_dominance        — driver mutation (m2) dominance
+    //   m2_effect           — driver mutation (m2) selection coefficient
+    //   simulationEndTick   — generation when the run stops
+    //   treesPath           — output tree file path
+
+    initializeSLiMModelType("nonWF");
+    initializeTreeSeq();
+    // Rate map: mutationRate applies to positions 0-49999 (m1's range, g1);
+    // driverMutationRate applies to positions 50001-99999 (g2's range,
+    // where it governs spontaneous m2 mutations). This lets the driver's
+    // mutation rate be tuned independently of the background rate, rather
+    // than sharing one value.
+    initializeMutationRate(c(mutationRate, driverMutationRate), c(49999, 99999));
+    initializeMutationType("m1", 0.5, "f", 0.0);
+    m1.convertToSubstitution = F;
+    initializeMutationType("m2", m2_dominance, "f", m2_effect);
+    m2.convertToSubstitution = F;
+    initializeGenomicElementType("g1", m1, 1.0);
+    initializeGenomicElementType("g2", m2, 1.0);
+    // m1 (neutral, background mutations) covers positions 0-49999 only.
+    // m2 (driver mutations) covers positions 50001-99999 — m2 arises
+    // spontaneously and repeatedly, anywhere in that range, via SLiM's
+    // automatic per-generation mutation process (at driverMutationRate).
+    // This is a multi-driver design: any cell whose lineage acquires a
+    // spontaneous m2 mutation becomes the start of a new, independent
+    // driver clone, competing with any others that arise. There is no
+    // guaranteed/manually-placed founder driver — position 50000 (between
+    // g1 and g2's ranges) is never used by anything.
+    initializeGenomicElement(g1, 0, 49999);
+    initializeGenomicElement(g2, 50001, 99999);
+    initializeRecombinationRate(0);
+}
+
+1 early() {
+    sim.addSubpop("p1", initialPopSize);
+}
+
+// NOTE: these three blocks are given an explicit "1:1000000" tick range
+// instead of being left unnumbered. On this setup, leaving them unnumbered
+// caused the run to silently stop after tick 1 (SLiM apparently used the
+// only explicitly-numbered block in the file — "1 early()" above — as the
+// run's effective length, even though unnumbered blocks are documented to
+// apply for the full run). Giving them a generous explicit upper bound
+// (10000x any realistic simulationEndTick) works around that; the actual
+// stopping point is still controlled entirely by simulationEndTick in
+// late() below, not by this 1000000 ceiling.
+1:1000000 reproduction() {
+    // Every living cell produces exactly one cloned offspring per
+    // generation (deterministic — no per-generation division probability).
+    // The parent is NOT killed here or anywhere else — there's no explicit
+    // kill step in this script; population size is regulated by nonWF
+    // density-dependent viability selection alone (see early() below), not
+    // by a forced per-age-cohort kill.
+    subpop.addCloned(individual);
+}
+
+1:1000000 early() {
+    // Standard nonWF density-dependence feedback: scale fitness based on
+    // the population size measured at the start of this generation, before
+    // this generation's reproduction runs. No (n > 0) guard is needed — p1
+    // always has at least its generation-1 founders, and since nothing is
+    // ever explicitly killed, n can only grow from there.
+    n = p1.individualCount;
+    p1.fitnessScaling = targetSize / n;
+    ////////////////////////////////
+    //Add migration setting if any//
+    ////////////////////////////////
+}
+
+1:1000000 late() {
+    // No explicit kill step: population turnover/equilibrium is governed
+    // entirely by the density-dependent fitnessScaling set in early()
+    // above (nonWF viability selection).
+    if (sim.cycle == simulationEndTick) {
+        sim.treeSeqOutput(treesPath);
+        catn("SLiM done. Tree written to: " + treesPath);
+        sim.simulationFinished();
+    }
+}
