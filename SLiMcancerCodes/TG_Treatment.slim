@@ -1,0 +1,127 @@
+//SLiM version 5.1
+//
+// TG_Treatment - TumorGrowth (single population, no migration) with drug
+// resistance and a single drug dose (nonWF).
+//
+// MODEL
+//   Same clonal growth model as TG.slim (one clone per cell per tick,
+//   density-dependent viability selection, drivers m2), plus:
+//     g3  [m3Start, m3End]  resistance mutations (m3) at resistanceMutationRate
+//   m3 has a fixed fitness cost: selection coefficient -resistanceCost with
+//   dominance 1, so a resistant cell's fitness is x (1 - resistanceCost).
+//   A cell is resistant if it carries at least one m3; resistance arises
+//   spontaneously at any time, so resistant cells can exist before the dose.
+//
+// TREATMENT (single dose)
+//   At generation treatmentTick only, every sensitive cell (no m3) survives
+//   with probability x (1 - drugKill) on top of its normal survival.
+//   Resistant cells are unaffected. Every other generation is normal growth.
+//
+// OUTPUT
+//   treesPath       tree sequence at simulationEndTick (as TG.slim)
+//   trajectoryPath  CSV, one row per generation, counted after viability:
+//                   total, sensitive and resistant cells, and whether the
+//                   dose was given that generation.
+//   If the tumor dies out, the run stops early, prints
+//   "TUMOR ERADICATED at generation N", and writes no tree.
+//
+// TICK CYCLE (nonWF)
+//   reproduction() -> early() [crowding, dose] -> viability -> late() [log]
+//
+// PARAMETERS (all required, passed with -d; see config.txt)
+//   everything TG.slim needs, plus m3Start, m3End, resistanceMutationRate,
+//   resistanceCost, treatmentTick, drugKill, trajectoryPath
+//
+// RUN
+//   Normally via `python simtreemaker.py nomigration treatment`.
+
+initialize() {
+    initializeSLiMModelType("nonWF");
+    initializeTreeSeq();
+
+    // ---- Validate genome layout (three non-overlapping regions) ----
+    starts = c(m1Start, m2Start, m3Start);
+    ends   = c(m1End, m2End, m3End);
+    names  = c("m1", "m2", "m3");
+    if (!all(isInteger(starts)) | !all(isInteger(ends)))
+        stop("Region starts and ends must be integers.");
+    if (any(starts < 0))
+        stop("Region starts must be >= 0.");
+    for (i in 0:2)
+        if (starts[i] > ends[i])
+            stop(names[i] + "Start (" + starts[i] + ") must be <= " + names[i] + "End (" + ends[i] + ").");
+    for (i in 0:1)
+        for (j in (i + 1):2)
+            if (starts[i] <= ends[j] & starts[j] <= ends[i])
+                stop(names[i] + " [" + starts[i] + "-" + ends[i] + "] and " + names[j] +
+                     " [" + starts[j] + "-" + ends[j] + "] overlap.");
+    if (drugKill < 0 | drugKill > 1)
+        stop("drugKill must be between 0 and 1.");
+
+    // ---- Mutation types ----
+    initializeMutationType("m1", 0.5, "f", 0.0);                  // neutral background
+    initializeMutationType("m2", m2_dominance, "f", m2_effect);   // driver
+    initializeMutationType("m3", 1.0, "f", -resistanceCost);      // resistance (cost)
+    m1.convertToSubstitution = F;
+    m2.convertToSubstitution = F;
+    m3.convertToSubstitution = F;
+
+    // ---- Genome ----
+    initializeGenomicElementType("g1", m1, 1.0);
+    initializeGenomicElementType("g2", m2, 1.0);
+    initializeGenomicElementType("g3", m3, 1.0);
+    initializeGenomicElement(g1, m1Start, m1End);
+    initializeGenomicElement(g2, m2Start, m2End);
+    initializeGenomicElement(g3, m3Start, m3End);
+
+    // Rate map ends must be ascending, so order the regions by position.
+    // Gap positions have no genomic element and never mutate.
+    o = order(starts);
+    initializeMutationRate(c(mutationRate, driverMutationRate, resistanceMutationRate)[o], ends[o]);
+
+    initializeRecombinationRate(0);
+}
+
+1 early() {
+    sim.addSubpop("p1", initialPopSize);
+    writeFile(trajectoryPath, "generation,total,sensitive,resistant,dosed");
+    community.rescheduleScriptBlock(s1, start=simulationEndTick, end=simulationEndTick);
+}
+
+reproduction() {
+    subpop.addCloned(individual);
+}
+
+early() {
+    // Crowding: survival = min(1, fitness * targetSize / n).
+    n = p1.individualCount;
+    if (n > 0)
+        p1.fitnessScaling = targetSize / n;
+
+    // Single dose. Individual fitnessScaling multiplies the population's
+    // and resets every tick, so only this generation is affected.
+    if (sim.cycle == treatmentTick) {
+        inds = p1.individuals;
+        sensitive = inds[inds.countOfMutationsOfType(m3) == 0];
+        sensitive.fitnessScaling = 1.0 - drugKill;
+        catn("Drug dose given at generation " + sim.cycle + ": " + size(sensitive) +
+             " sensitive, " + (n - size(sensitive)) + " resistant cells");
+    }
+}
+
+late() {
+    inds = p1.individuals;
+    res  = sum(inds.countOfMutationsOfType(m3) > 0);
+    writeFile(trajectoryPath, paste(c(sim.cycle, p1.individualCount, p1.individualCount - res,
+                                      res, asInteger(sim.cycle == treatmentTick)), sep=","), append=T);
+    if (p1.individualCount == 0) {
+        catn("TUMOR ERADICATED at generation " + sim.cycle);
+        sim.simulationFinished();
+    }
+}
+
+s1 2 late() {
+    sim.treeSeqOutput(treesPath);
+    catn("SLiM done. Tree written to: " + treesPath);
+    sim.simulationFinished();
+}
