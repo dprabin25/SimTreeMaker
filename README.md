@@ -426,7 +426,7 @@ Tested with SLiM 5.2, Python 3.11, tskit 1.0.3, R 4.5 and ape 5.8 on Windows.
 
 If you use SimTreeMaker, please cite:
 
-Dawadi P, Miura S. SimTreeMaker: a flexible SLiM-based simulator for tumor evolution and cellular phylogeny benchmarking. *Manuscript in preparation.*
+Savannah L. Wilson, Dawadi P.*, Niraula D., Miura S*. SimTreeMaker: a flexible SLiM-based simulator for tumor evolution and cellular phylogeny benchmarking. *Manuscript in preparation.*
 
 and the software it builds on:
 - Haller BC, Messer PW (2023). SLiM 4: multispecies eco-evolutionary modeling. *The American Naturalist* 201(5):E127–E139.
