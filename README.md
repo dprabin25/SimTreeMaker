@@ -1,282 +1,437 @@
 # SimTreeMaker
 
-A pipeline for running SLiM cancer-evolution simulations and converting the resulting tree sequences into Newick phylogenies and PNG plots.
+**Simulate tumors whose true evolutionary history is known, and use them to test single-cell phylogeny and genotyping methods.**
 
-## Cancer simulation pipelines — overview
+How well does a tumor-phylogeny method work? On real data the true tree is never known, so the question cannot be answered. SimTreeMaker grows a virtual tumor cell by cell in [SLiM](https://messerlab.org/slim/), records every cell division, and gives you:
+- the **true cell tree**;
+- the **true mutations** of every sampled cell;
+- the **same data as a sequencing experiment would deliver**, optionally with realistic single-cell errors.
 
-This project has four methods across three separate SLiM-based pipelines, each in its own self-contained folder. None of them share state — editing or running one never affects the others.
+Run your method on the sequences, compare its answer with the truth, and you know how accurate it is.
 
-| Folder | Method | What it does |
+---
+
+## Why use SimTreeMaker
+
+- **The right answer is known.** Every sampled cell's ancestry and mutations are recorded exactly.
+- **Realistic tumor biology.** Driver mutations with positive selection, clonal expansions, metastatic spread between sites, and drug treatment with resistance.
+- **Realistic single-cell data.** Missing data, allelic dropout and false-positive calls, at rates you choose. A noise-free control is produced automatically.
+- **No programming needed.** Everything is set in one plain-text file, `config.txt`.
+- **Fast and reproducible.** A typical run takes seconds on a laptop. One random seed reproduces a run exactly.
+
+### What you can use it for
+
+- Benchmarking tumor-phylogeny methods on data where the true tree is known.
+- Testing how genotype-calling and error-correction methods cope with missing data and sequencing errors.
+- Studying how selection, tumor age and size, metastasis or therapy shape cell phylogenies.
+- Generating example data for teaching and for developing new methods.
+
+---
+
+## Getting started (3 steps)
+
+**1. Install** SLiM, Python and R in one conda environment:
+
+```
+conda create -n SimTreeMaker -c conda-forge python=3.11 slim=5.2 tskit=1.0.3 pyslim=1.1.1 numpy biopython matplotlib r-base r-ape -y
+conda activate SimTreeMaker
+```
+
+**2. Tell SimTreeMaker where SLiM is.** Open `SLiMcancerCodes/slim_config.txt` and set the path, which you can find with `which slim` (macOS/Linux) or `where slim` (Windows):
+
+```
+SLIM_EXE = /path/to/slim
+```
+
+**3. Run:**
+
+```
+cd SLiMcancerCodes
+python simtreemaker.py nomigration
+```
+
+SLiM may print a warning that "a neutral mutation type was defined and used"; this is expected and can be ignored. A finished run ends with `Run complete.`
+
+After a few seconds you have a tumor of about 1,400 cells, 400 of them sampled. The results are in `SLIMcanceroutputs/TG/NoMigration/`:
+
+```
+NoMigration/
+├── newick/TumorGrowth.nwk          true cell tree
+├── pngTree/                        pictures of the tree
+├── snv/TumorGrowth_snv.csv         true mutations of every cell
+├── fasta/TumorGrowth_snv.fasta     sequences of the sampled cells (input for your method)
+└── log.txt                         settings, seed and messages of every run
+```
+
+`SLIMcanceroutputs.zip` in this repository contains this example output for all modes, so you can look at it before installing anything.
+
+---
+
+## What you can simulate
+
+Each feature is switched on with a word on the command line, and controlled by its own section of `config.txt`.
+
+| Feature | Command | config.txt section |
 |---|---|---|
-| `TumorGrowth\` | 1 & 2 | Tumor growth, no migration (1) or with migration (2) |
-| `Trees\` | 3 | Convert existing `.trees` files to Newick + SNV + PNG, no SLiM run |
-| `CaseStudy\` | 4 | Patient-calibrated clonal hematopoiesis case study |
+| Tumor growth (single tumor) | `python simtreemaker.py nomigration` | Primary population, Mutation, Genome layout |
+| Metastasis | `python simtreemaker.py migration` | Migration |
+| Therapy (single tumor only) | `python simtreemaker.py nomigration treatment` | Treatment |
+| Sequencing errors | add `noise` to any of the commands above | Sequencing noise |
 
-All three ultimately produce the same three deliverables from a SLiM `.trees` file: a **Newick tree** (`.nwk`), a **per-cell SNV CSV**, and **tree PNGs** (with and without tip labels). That conversion step is done by the same `slim_utilities.py` functions in every folder (each folder keeps its own copy, so the folders stay independent).
+Therapy is available only for a single tumor (`nomigration`). Migration runs are never treated.
 
-Unfamiliar term? See `GLOSSARY.md` — it defines every concept and every Eidos/SLiM code term (functions, properties, callbacks) actually used in each method's `.slim` file.
+### Tumor growth
+
+A tumor grows from one founder cell (or more). Each generation, cells divide. Crowding keeps cells without drivers near a carrying capacity, while driver mutations make a cell fitter, so its descendants expand into large clones. Neutral (passenger) and driver mutations accumulate at the rates you set.
+
+*Change:* tumor age, size, mutation rates, driver strength, genome size.
+
+### Metastasis (migration)
+
+Metastatic sites are founded by cells that migrate from the primary tumor or from another metastasis. They then keep receiving migrants at a rate you set. Each site grows and evolves on its own and is sampled separately, and all cells end up in one tree.
+
+*Change:* the number of sites, when each is founded, its source, its size, and its migration rate.
+
+### Therapy (treatment)
+
+A single drug dose is given to a growing single tumor (no migration). Before the dose, resistance mutations arise by chance; they carry a small fitness cost. The dose kills most sensitive cells, and resistant cells survive. The tumor then regrows from the survivors. Resistant cells are marked in all outputs, and the numbers of sensitive and resistant cells in every generation are saved and plotted.
+
+*Change:* when the dose is given, how strong it is, the cost of resistance, and the resistance mutation rate.
+
+### Sequencing errors (noise)
+
+The sequences are degraded as in single-cell DNA sequencing:
+- missing data (`?`);
+- false negatives (allelic dropout);
+- false positives.
+
+The amount of missing data can be the same for all cells or vary between cells and sites. Two versions are always written: a noise-free **control**, checked automatically against the true data, and the noisy **test**. Every introduced error is logged.
+
+*Change:* the three error rates and how unevenly missing data is spread.
 
 ---
 
-## Dependencies
+## Changing the settings (`config.txt`)
 
-- **SLiM** (the simulation engine) — download from [messerlab.org/slim](https://messerlab.org/slim/), then point `SLIM_EXE` in each folder's `slim_config.txt` to the executable. (`TumorGrowth\` and `CaseStudy\` each ship a `slim_config.example.txt` template — copy it to `slim_config.txt` in the same folder and edit the path. `Trees\` doesn't run SLiM at all, so it has no `slim_config.txt`.)
-- **Python + R packages:**
+Everything about a simulation is set in `SLiMcancerCodes/config.txt`; no code needs to be edited.
+1. Open it in any text editor (Notepad, TextEdit, …).
+2. Change the value after `=` and save.
+3. Run again.
 
-  ```
-  conda create -n SimTreeMaker -c conda-forge python=3.11 biopython=1.85 matplotlib pyslim=1.1.1 tskit=1.0.3 r-base r-ape -y
-  conda activate SimTreeMaker
-  ```
-
-  R with the `ape` package is optional but preferred for tree plotting (`plot_tree.R`, run automatically via `Rscript` if it's on your PATH); if `Rscript` isn't found, the pipeline falls back to a built-in matplotlib renderer automatically — no action needed either way.
-
----
-
-## Method 1 — Tumor growth, no migration
-
-**Folder:** `TumorGrowth\`
-**Model file:** `TG.slim`
-**Runner:** `simtreemaker.py`
-
-### At a glance
-
-- **Working dir:** `TumorGrowth\`
-- **What it does:** grows a tumor from a single founder cell to a target size, with spontaneous background and driver mutations, no migration.
-- **Model file:** `TG.slim`
-- **Requirements:** SLiM installed, its path known. Python 3. `Rscript` on PATH is optional (nicer tree PNGs); falls back to matplotlib automatically if missing.
-- **Config:** `slim_config.txt` (SLiM executable path) + `config.txt` (model parameters).
-- **Outputs:** `TumorGrowth\TG\NoMigration\` — `.trees`, `newick\`, `snv\`, `pngTree\`, `log.txt` (see full list below).
-
-### The model
-
-`TG.slim` is a nonWF (non-Wright-Fisher) SLiM model of tumor growth from a single founder cell:
-
-- Generation 1 starts with `initialPopSize` founder cell(s) in population `p1`.
-- Every living cell clones exactly one offspring per generation (`reproduction()`) — cells are never explicitly killed. Population size is instead regulated by density-dependent viability selection: each generation, `p1.fitnessScaling = targetSize / n`, where `n` is the current population size. This pulls the population toward `targetSize` without a hard cutoff.
-- Background (passenger) mutations — type `m1`, neutral — arise at `mutationRate` per base across genome positions 0–49999.
-- Driver mutations — type `m2`, selection coefficient `m2_effect`, dominance `m2_dominance` — arise spontaneously at `driverMutationRate` per base across positions 50001–99999. There is no guaranteed founder driver; every `m2` mutation, including the first, appears on its own via this background rate. Because drivers can arise anywhere in that range and at any time, this is a **multi-driver** design — multiple independent driver clones can appear and compete.
-- The run stops at generation `simulationEndTick`, at which point the tree sequence is written to `treesPath`.
-
-Required `-d` constants: `initialPopSize`, `targetSize`, `mutationRate`, `driverMutationRate`, `m2_dominance`, `m2_effect`, `simulationEndTick`, `treesPath`.
-
-### Running it directly (no Python)
+The text after `#` on each line explains the setting. For example, to simulate an older tumor, change
 
 ```
-cd TumorGrowth
-slim -d initialPopSize=1 -d targetSize=150 -d mutationRate=1e-8 -d driverMutationRate=1e-8 -d m2_dominance=0.5 -d m2_effect=0.6 -d simulationEndTick=200 -d treesPath="'TG.trees'" TG.slim
+simulationEndTick   = 200
 ```
 
-This only ever runs the plain no-migration model — `TG.slim` has no migration code in it at all (see Method 2).
-
-### Running it through `simtreemaker.py` (recommended)
+to
 
 ```
-cd TumorGrowth
-python simtreemaker.py
+simulationEndTick   = 300
 ```
 
-This does everything the terminal command above does, plus the Newick/SNV/PNG conversion afterward, by reading two config files instead of you typing `-d` flags by hand:
+Settings are checked before the simulation starts; a value that does not make sense (for example, overlapping genome regions) stops the run with a message saying what to fix. All settings are listed below. `SLiMcancerCodes/CONFIG_GUIDE.md` explains each one in more detail.
 
-- **`slim_config.txt`** — one setting, `SLIM_EXE`, the path to your `slim` executable (on this machine: `C:\Users\newfaculty\anaconda3\envs\SimTreeMaker\Library\bin\slim.exe`, from the `SimTreeMaker` conda environment).
-- **`config.txt`** — the actual model parameters: `mutationRate`, `driverMutationRate`, `m2_dominance`, `m2_effect`, `initialPopSize`, `targetSize`, `Pop1SampleCells` (how many `p1` cells get sampled for the tree/SNV output), `simulationEndTick`, and `treeOutputFile` (the base filename for outputs). It also holds the `Pop2`–`Pop4` migration settings and the `migrationEnabled` flag — those only matter for Method 2 (see below); with `migrationEnabled = F` (the default), this run ignores all of them.
+### Run
 
-You can override any single `config.txt` value for one run without editing the file, e.g.:
+| Setting | Default | What it changes |
+|---|---|---|
+| `simulationEndTick` | 200 | Number of generations (tumor age). All populations are sampled at this generation. |
+| `simSeed` | 12345 | Random seed. Same seed and settings = same tumor. Change it for a new replicate; leave empty for a random seed. |
+
+### Primary population (p1)
+
+| Setting | Default | What it changes |
+|---|---|---|
+| `initialPopSize` | 1 | Number of founder cells (1 = growing tumor; equal to `targetSize` = population of stable size). |
+| `targetSize` | 500 | Carrying capacity for cells without drivers. Tumors with drivers grow beyond it. |
+| `Pop1SampleCells` | 400 | Number of cells sampled. |
+
+### Mutation
+
+| Setting | Default | What it changes |
+|---|---|---|
+| `mutationRate` | 1e-8 | Neutral mutation rate (per base per generation). |
+| `driverMutationRate` | 1e-8 | Driver mutation rate. 0 = no drivers. |
+| `m2_effect` | 0.3 | Strength of selection on drivers (*s*). 0 = drivers have no effect (neutral evolution). |
+| `m2_dominance` | 0.5 | Dominance of drivers (*h*). Each driver multiplies fitness by 1 + *hs* (1.15 by default). |
+
+### Genome layout
+
+| Setting | Default | What it changes |
+|---|---|---|
+| `m1Start`, `m1End` | 0 – 9,999,999 | Neutral region (10 Mb). |
+| `m2Start`, `m2End` | 10,000,000 – 10,049,999 | Driver region (50 kb). |
+
+Positions are counted from 0, ends included, and regions must not overlap. A longer region gives more mutations: doubling its length has the same effect as doubling the mutation rate.
+
+### Migration (used with `migration`)
+
+Each row is one metastatic site:
 
 ```
-python simtreemaker.py targetSize=300
+#        Origin  Time  IniPopSize  TargetSize  MigrationRate  SampleCells
+Pop2   = Pop1    50    5           100         0.01           100
+Pop3   = Pop1    100   5           80          0.01           100
+Pop4   = Pop3    125   5           150         0.01           100
 ```
+
+| Column | Meaning |
+|---|---|
+| Origin | Where the migrants come from (`Pop1` = primary tumor, or an earlier site). |
+| Time | Generation the site is founded (before `simulationEndTick`). |
+| IniPopSize | Number of founding cells. |
+| TargetSize | Carrying capacity of the site. |
+| MigrationRate | Chance, per cell and generation, that a cell of Origin migrates in afterwards. |
+| SampleCells | Number of cells sampled from the site. |
+
+- To add a site, add a row (`Pop5 = …`).
+- To remove one, delete its row or put `#` at the start of it.
+
+### Treatment (used with `nomigration treatment`; single tumor only)
+
+| Setting | Default | What it changes |
+|---|---|---|
+| `treatment` | off | `on` = every no-migration run is treated (same as adding `treatment` to the command). |
+| `treatmentTargetSize` | 2500 | Carrying capacity in treatment runs. It is larger than usual so that rare resistant cells are present when the drug is given. |
+| `treatmentTick` | 150 | Generation of the dose. |
+| `drugKill` | 0.7 | Chance that a sensitive cell dies at the dose. |
+| `resistanceCost` | 0.05 | Fitness cost of resistance (0.05 = 5% less fit; 0 = no cost). |
+| `resistanceMutationRate` | 2e-8 | Resistance mutation rate. |
+| `m3Start`, `m3End` | 10,050,000 – 10,054,999 | Resistance region (5 kb). |
+
+### Sequencing noise (used with `noise`)
+
+| Setting | Default | What it changes |
+|---|---|---|
+| `noise` | off | `on` = every run adds noise (same as adding `noise` to the command). |
+| `missingRate` | 0.3 | Average fraction of missing sites. |
+| `cellSpread` | 0 | How much missing data varies between cells (0 = equal; closer to 1 = very unequal). |
+| `siteSpread` | 0 | How much missing data varies between sites. |
+| `fnRate` | 0.2 | False-negative (dropout) rate at mutated sites. |
+| `fpRate` | 0.01 | False-positive rate at unmutated sites. |
+| `noiseSeed` | 12345 | Seed for the noise. |
 
 ### Output
 
-Everything lands in `TumorGrowth\TG\NoMigration\`:
-
-- `TumorGrowth.trees` — the raw tree sequence
-- `newick\TumorGrowth.nwk` — the lineage tree in Newick format
-- `snv\TumorGrowth_snv.csv` — per-cell mutation table (cell ID, population, mutation type `m1`/`m2`, genomic position, generation the mutation arose)
-- `pngTree\TumorGrowth_horizontal_labels.png` / `_no_labels.png` — rendered tree images (via R+`ape` if `Rscript` is on PATH, otherwise a matplotlib fallback)
-- `log.txt` — one entry per run: the exact SLiM command used, SLiM's console output, and the resulting output paths (or the failure reason, if it failed)
+| Setting | Default | What it changes |
+|---|---|---|
+| `outputDir` | `../SLIMcanceroutputs` | Where results are written. |
+| `treeOutputFile` | TumorGrowth | Name given to all output files. |
+| `fastaSeed` | 12345 | Seed for the DNA bases in the FASTA files. |
+| `writeFullFasta` | F | `T` = also write the full genome of every sampled cell (large). |
 
 ---
 
-## Method 2 — Tumor growth, with migration
+## Output files
 
-**Folder:** `TumorGrowth\` (same folder as Method 1)
-**Model file:** `TG.slim` (same file — see below)
-**Runner:** `simtreemaker.py migration`
+Results go to `<outputDir>/TG/NoMigration/`, `Migration/` or `Treatment/`.
 
-### At a glance
+| File | Contents |
+|---|---|
+| `newick/<name>.nwk` | True cell tree of the sampled cells (Newick) |
+| `pngTree/<name>_horizontal_labels.png`, `_no_labels.png` | Pictures of the tree |
+| `snv/<name>_snv.csv` | One row per cell and mutation: population, type (m1 neutral, m2 driver, m3 resistance), position, generation it arose |
+| `fasta/<name>_snv.fasta` | Sequences of the sampled cells at all mutated sites (one row per cell) |
+| `fasta/<name>_snv_positions.tsv` | Genome position, mutation type and the two DNA bases of each column |
+| `fasta/<name>_parent.fasta` | Genome of the founder cell |
+| `fasta/<name>_full.fasta` | Full genome of every sampled cell (only if `writeFullFasta = T`) |
+| `noise/control/`, `noise/test/` | Noise-free and noisy sequences, each with a Normal (unmutated) sequence, a log of every change and the missing rate of each cell |
+| `trajectory/<name>_trajectory.csv`, `.png` | Treatment runs: total, sensitive and resistant cells in every generation |
+| `<name>.trees` | Complete simulation history (tskit tree sequence) for advanced analyses |
+| `log.txt` | Settings, seed and messages of every run |
 
-- **Working dir:** `TumorGrowth\` (same folder as Method 1)
-- **What it does:** the same tumor growth model as Method 1, plus one or more additional populations seeded by migration from an existing population (metastasis-style spread).
-- **Model file:** `TG.slim` (same file as Method 1 — no separate migration `.slim` file is ever saved; see below).
-- **Requirements:** identical to Method 1 — same SLiM install, same optional `Rscript`.
-- **Config:** the exact same `slim_config.txt` and `config.txt` as Method 1 — nothing separate. `config.txt`'s `migrationEnabled` flag and `PopN*` keys (ignored by Method 1) are what this method actually uses.
-- **Inputs:** none — same as Method 1, fresh simulation every run.
-- **Outputs:** `TumorGrowth\TG\Migration\` — same file set as Method 1, just in its own subfolder so the two methods' outputs never overwrite each other.
+Cells have the same name in every file, e.g. `gen0_ind12|pop1|m1+m2`. The fields are the cell ID, its population, and the types of mutation it carries.
+
+---
+
+## Reproducibility
+
+- `simSeed` controls the simulation and which cells are sampled.
+- `noiseSeed` controls the noise.
+- `fastaSeed` controls the DNA bases.
+
+With the same `config.txt` and command, the result is identical. The seed of every run is printed at the end and saved in `log.txt`. For replicates, change only `simSeed` (e.g. 1, 2, 3, …).
+
+---
+
+## How the code works
+
+`simtreemaker.py` is the only program you run. It reads `config.txt`, chooses the SLiM model, runs SLiM, then hands the result to Python code that samples cells and writes the outputs. The table shows which code is responsible for each feature. Line numbers refer to the current version.
+
+| Feature | What decides it | Where in the code |
+|---|---|---|
+| Tumor growth | Always | `TG.slim` (whole file) |
+| Migration | `migration` on the command line | `TG.slim` lines 94–96 (marker) + `simtreemaker.py` `_POP_TEMPLATE` (line 97), `build_migration_slim_text()` (line 220) |
+| Treatment | `treatment` on the command line, or `treatment = on` | `simtreemaker.py` line 612 selects `TG_Treatment.slim`; dose in `TG_Treatment.slim` lines 103–109 |
+| Cell sampling and tree | Always | `slim_utilities.py` `convert_to_newick()` (line 550), `_merge_genome_copies()` (line 387) |
+| FASTA | Always | `slim_utilities.py` `write_fasta_set()` (line 226) |
+| Noise (gaps and errors) | `noise` on the command line, or `noise = on` | `simtreemaker.py` lines 801–814 call `add_noise.py` `add_noise()` (line 104) |
+
+### Tumor growth: `TG.slim`
+
+`TG.slim` is a plain, single-population model. The three key parts:
 
 ```
-cd TumorGrowth
-python simtreemaker.py migration
-```
+reproduction() {
+    subpop.addCloned(individual);          // every cell makes one copy of itself
+}
 
-This is Method 1 plus one extra step, reading the exact same `config.txt` and `slim_config.txt` — nothing about Method 1 changes to support it.
-
-**What's different:** `TG.slim` itself has no migration logic — just an inert 3-line comment marker inside its `early()` block:
-
-```
-////////////////////////////////
-//Add migration setting if any//
-////////////////////////////////
-```
-
-When you add `migration` on the command line, `simtreemaker.py` does the following (all inside `simtreemaker.py` itself — no separate generator file):
-
-1. `detect_migration_pops(params)` scans `config.txt` for any `PopN*` keys (`PopN1Time`, `PopN2Time`, …) and collects whichever population numbers it finds — this isn't fixed to any particular count or set of numbers; add a new population by adding its `PopN*` block to `config.txt` and it's picked up automatically, no code changes needed.
-2. `build_migration_slim_text(script_dir, pop_ids)` reads `TG.slim`'s text and calls `insert_migration_block()`, which replaces that marker with generated Eidos code — one block per population found in step 1 — that seeds each population from its configured source population at its configured generation, then draws ongoing migrants every generation after that.
-3. `main()` writes that generated text to a temporary `.slim` file (`tempfile.NamedTemporaryFile(..., suffix=".slim", delete=False)`), runs SLiM against it, then removes it in a `finally` block right after — so the file exists only for the duration of that one run.
-
-No separate migration `.slim` file is ever saved — everything needed to reproduce the migration model lives in `TG.slim` (the backbone), `simtreemaker.py` (the code that builds and runs the migration block), and `config.txt` (the population settings).
-
-### What the substitution looks like
-
-The marker, exactly as it sits in `TG.slim`:
-
-```
+early() {
+    n = p1.individualCount;
+    p1.fitnessScaling = targetSize / n;    // crowding: survival = fitness x targetSize / n
     ////////////////////////////////
-    //Add migration setting if any//
+    //Add migration setting if any//       <- marker, lines 94-96 (does nothing on its own)
     ////////////////////////////////
+}
+
+s1 2 late() {
+    sim.treeSeqOutput(treesPath);          // save the full ancestry at simulationEndTick
+}
 ```
 
-After `python simtreemaker.py migration` builds the temporary script — shown here for one population, `p2` (`config.txt` defining `Pop2Time`, `Pop2Origin`, `Pop2IniPopSize`, `Pop2TargetSize`, `Pop2MigrationRate`). The three marker lines are kept as-is; the generated block is appended right after them:
+Drivers act through `initializeMutationType("m2", m2_dominance, "f", m2_effect)` (line 55): SLiM multiplies a cell's fitness by 1 + *hs* for each driver it carries.
 
-```eidos
-    ////////////////////////////////
-    //Add migration setting if any//
-    ////////////////////////////////
-    if (sim.cycle >= Pop2Time) {
-        source2 = sim.subpopulations[sim.subpopulations.id == Pop2Origin];
-        if (sim.cycle == Pop2Time) {
-            // Founding pull: seed p2 from its configured source population.
-            sim.addSubpop("p2", 0);
-            if (size(source2) > 0) {
-                nMig = min(Pop2IniPopSize, source2.individualCount);
-                migrants = sample(source2.individuals, nMig);
-                p2.takeMigrants(migrants);
-            }
-        } else if (size(source2) > 0) {
-            // Ongoing migration: draw this generation's migrant count from the source.
-            nOngoing = rbinom(1, source2.individualCount, Pop2MigrationRate);
-            if (nOngoing > 0)
-                p2.takeMigrants(sample(source2.individuals, nOngoing));
-        }
-        n2 = p2.individualCount;
-        if (n2 > 0)
-            p2.fitnessScaling = Pop2TargetSize / n2;
+### Migration: code inserted at the marker
+
+`TG.slim` itself never migrates. With `migration`, `simtreemaker.py` does three things:
+1. It reads `TG.slim`.
+2. It replaces the 3-line marker with one block of code per `PopN` row in `config.txt` (`insert_migration_block()`, line 195). The block is written by `_POP_TEMPLATE` (line 97).
+3. It runs the result from a temporary file (line 632), which is deleted after the run.
+
+For `Pop2` the inserted block is:
+
+```
+if (sim.cycle >= Pop2Time) {
+    source2 = sim.subpopulations[sim.subpopulations.id == Pop2Origin];
+    if (sim.cycle == Pop2Time) {                              // founding
+        sim.addSubpop("p2", 0);
+        p2.takeMigrants(sample(source2.individuals, min(Pop2IniPopSize, source2.individualCount)));
+    } else {                                                  // ongoing migration
+        nOngoing = rbinom(1, source2.individualCount, Pop2MigrationRate);
+        if (nOngoing > 0)
+            p2.takeMigrants(sample(source2.individuals, nOngoing));
     }
+    p2.fitnessScaling = Pop2TargetSize / p2.individualCount;  // crowding in p2
+}
 ```
 
-If `config.txt` defines more than one population (e.g. `Pop2` and `Pop3`), one of these blocks is appended per population found — `Pop2Time`/`Pop2Origin`/etc. for the first, `Pop3Time`/`Pop3Origin`/etc. for the second, back to back after the same marker. `Pop2Time`, `Pop2Origin`, and the rest are Eidos identifiers here — they arrive as `-d` constants on the SLiM command line, built from the matching `config.txt` values. This spliced text only ever exists as a temporary file for the duration of one run (see step 3 above) — never saved permanently.
+So **adding a `Pop5` row to `config.txt` adds one more block like this**; no code is edited by hand.
 
-### Migration population settings in `config.txt`
+### Treatment: `TG_Treatment.slim`
 
-Each population is a number `N` (any number ≥ 2 — not limited to 2/3/4, and not necessarily consecutive) with five keys:
-
-```
-PopN Time            = ...   # generation this population is created and seeded
-PopN IniPopSize      = ...   # migrants pulled in at PopN Time
-PopN TargetSize      = ...   # carrying capacity thereafter
-PopN MigrationRate   = ...   # per-source-individual probability of migrating in, each generation after PopN Time
-PopN SampleCells     = ...   # cells sampled from this population for the Newick tree + SNV CSV
-PopN Origin          = ...   # which existing population this one migrates from (e.g. "Pop1", "p1", or a bare integer)
-```
-
-(written without the space between `Pop` and `N` in the actual file, e.g. `Pop2Time`, `Pop5Origin`.) Override any of these the same way as any other config value, e.g. to move when population `2` appears:
+With `treatment`, line 612 of `simtreemaker.py` runs `TG_Treatment.slim` instead of `TG.slim`, and lines 670–672 pass the treatment settings to SLiM. `TG_Treatment.slim` is `TG.slim` plus:
 
 ```
-python simtreemaker.py migration Pop2Time=30
+initializeMutationType("m3", 1.0, "f", -resistanceCost);    // line 64: resistance, with a fitness cost
+
+if (sim.cycle == treatmentTick) {                           // lines 103-109: the single dose
+    inds = p1.individuals;
+    sensitive = inds[inds.countOfMutationsOfType(m3) == 0];  // cells without m3
+    sensitive.fitnessScaling = 1.0 - drugKill;               // survive with probability 1 - drugKill
+}
 ```
 
-**Output:** same structure as Method 1, just in `TumorGrowth\TG\Migration\` instead of `TG\NoMigration\` — `TumorGrowth.trees`, `newick\`, `snv\`, `pngTree\`, `log.txt`, same file-naming convention, same log format.
+The `late()` block (lines 112–121) writes the numbers of sensitive and resistant cells in every generation to the trajectory file, and stops the run if no cell is left.
+
+### Cell sampling and the true tree: `slim_utilities.py`
+
+`convert_to_newick()` (line 550) opens the `.trees` file and samples `PopNSampleCells` cells per population (seeded by `simSeed`). It then calls `_merge_genome_copies()` (line 387), which joins each cell's two genome copies so that mutations on either copy are reported. Finally it writes the Newick tree and the SNV table.
+
+### FASTA: `write_fasta_set()` in `slim_utilities.py` (line 226)
+
+SLiM records where mutations are, not which DNA base they create, so the bases are drawn here (seeded by `fastaSeed`):
+
+```
+parent = rng.integers(0, 4, size=seq_len)                  # line 240: random founder genome (A/C/G/T)
+allele_base = [ref_base] + [alt_pool[i % 3] ...]           # line 254: a different random base for each mutation
+```
+
+Each column of `_snv.fasta` is one mutated site: a cell shows the founder base if it lacks the mutation, and the new base if it has it. `_snv_positions.tsv` records the genome position and both bases of each column.
+
+### Noise and gaps: `add_noise()` in `add_noise.py` (line 104)
+
+`simtreemaker.py` calls `add_noise()` twice (lines 805–808): once with all rates 0 (control) and once with the `config.txt` rates (test). It then checks that the control equals the clean FASTA (line 814). Inside `add_noise()`:
+
+```
+cell_rate = beta_rates(rng, missing, cell_spread, n_cells)     # line 145: missing rate of each cell
+site_rate = beta_rates(rng, missing, site_spread, n_sites)     #           and of each site
+is_miss = rng.random(mat.shape) < p_miss                       # line 156: gaps
+is_fn   = ~is_miss & mutated  & (flip < fn)                    # line 158: false negatives (mutant -> normal base)
+is_fp   = ~is_miss & ~mutated & (flip < fp)                    # line 159: false positives (normal -> mutant base)
+noisy[is_miss] = "?"                                           # line 164: gaps written as "?"
+```
+
+Gaps are decided first, so false negatives and false positives only affect sites that are observed. Every change is written to the `_log.tsv` file.
 
 ---
 
-## Method 3 — Process existing trees (no SLiM run)
+<details>
+<summary><b>Model details</b></summary>
 
-**Folder:** `Trees\`
-**Runner:** `process_trees.py`
+- **Growth.**
+  - SLiM non-Wright–Fisher model of a clonal population of diploid cells.
+  - Each generation, every cell produces one daughter. Each cell survives with probability min(1, fitness × `targetSize` / N), where N is the population size.
+  - Drivers (m2) multiply fitness by 1 + *hs*; neutral mutations (m1) do not change fitness.
+  - Mutations arise at per-base rates in the regions set in Genome layout.
+  - The ancestry of all cells is recorded as a tree sequence.
+- **Migration.**
+  - The migration code is generated from `TG.slim` for each run, using the `PopN` rows, and runs from a temporary file.
+  - Each site is created at its `Time` with `IniPopSize` migrants from its `Origin`. Afterwards, each Origin cell migrates in with probability `MigrationRate` each generation.
+  - Each site has its own carrying capacity.
+- **Treatment** (`TG_Treatment.slim`, single tumor only).
+  - Resistance mutations (m3) have selection coefficient −`resistanceCost` and dominance 1. A cell with at least one m3 is resistant.
+  - At `treatmentTick`, each sensitive cell dies with probability `drugKill`; resistant cells are unaffected. No further drug is given.
+  - If no cell survives, the run reports `TUMOR ERADICATED` and writes no tree.
+- **Sampling and sequences.**
+  - `PopNSampleCells` cells are sampled from each population at `simulationEndTick`, and mutations on both genome copies are reported.
+  - SLiM does not assign DNA bases. SimTreeMaker therefore draws a random founder genome and, for each mutated site, a random different base.
+- **Noise.**
+  - Missing sites are hidden first. False negatives (mutant → founder base) and false positives (founder → mutant base) are then applied to the observed sites.
+  - With `cellSpread`/`siteSpread` > 0, each cell's or site's missing rate is drawn from a beta distribution with mean `missingRate`.
+  - The control (all rates 0) must equal the clean alignment, or the run stops.
 
-### At a glance
+</details>
 
-- **Working dir:** `Trees\`
-- **What it does:** converts existing `.trees` files to Newick + SNV CSV + tree PNGs. No simulation runs here.
-- **Model file:** none — no SLiM run happens in this method at all.
-- **Requirements:** Python 3 only — no SLiM installation needed at all for this method.
-- **Config:** none — sampling defaults (all populations, up to 400 cells, no fixed seed) are fixed directly in `slim_utilities.py`'s `load_tree_options()`.
-- **Inputs:** **required** — one or more `.trees` files must already exist directly inside `Trees\` before running this (from any of the other methods, or from elsewhere). With none present, it just reports that and exits.
-- **Outputs:** `Trees\newick\`, `Trees\snv\`, `Trees\pngTree\`, `Trees\log.txt` — one set per `.trees` file, named after that file.
+## Limitations
 
-For when you already have `.trees` files — from any of the methods above, or from elsewhere — and just want the Newick/SNV/PNG conversion without running SLiM again.
-
-```
-cd Trees
-python process_trees.py
-```
-
-Drop any `.trees` file into this folder and running the command scans for every `*.trees` file and converts each one it hasn't already processed (checked by whether a matching `newick\<name>.nwk` already exists). Re-run any time — already-done files are skipped automatically.
-
-- `python process_trees.py --force` — reprocess everything, even already-done files
-- `python process_trees.py someFile.trees` — process just that one file
-
-**Output:** `newick\`, `snv\`, `pngTree\`, `log.txt`, directly inside `Trees\` — same naming convention as the other methods, just keyed off each `.trees` file's own name instead of a run's parameters.
-
----
-
-## Method 4 — Case study (clonal hematopoiesis)
-
-**Folder:** `CaseStudy\`
-**Model file:** `Simulation4_ClonalHematopoiesis.slim`
-**Runner:** `casestudy.py`
-
-### At a glance
-
-- **Working dir:** `CaseStudy\`
-- **What it does:** grows a single hematopoietic stem cell to 100,000 cells, with a driver mutation deliberately introduced at a chosen generation, modeling clonal hematopoiesis.
-- **Model file:** `Simulation4_ClonalHematopoiesis.slim` (separate from `TG.slim` — not related to Methods 1/2).
-- **Requirements:** SLiM installed, its path known. Python 3. Same optional `Rscript` for nicer PNGs as the other methods.
-- **Config:** `slim_config.txt` only (SLiM executable path). No `config.txt` — `AGE`/`DRIVER_TICK`/`REP` have defaults built into `casestudy.py` itself and are overridden straight from the terminal.
-- **Outputs:** `CaseStudy\CaseStudyOutputs\` — `.trees`, `newick\`, `snv\`, `pngTree\`, `log.txt` (see full list below).
-
-A separate, patient-calibrated model (modeled after Mitchell et al. 2022, *Nature*) — a single ancestral hematopoietic stem cell expands to 100,000 cells, with a driver mutation introduced into a random newborn cell at a configurable generation, and stem-cell attrition after 35 generations approximating age-related decline.
-
-Three `-d` constants, edited straight from the terminal — no `config.txt` for this one, since there's only one model file and three values:
-
-- `AGE` — generation the simulation stops at (the patient's age at sampling; ≤ 500)
-- `DRIVER_TICK` — generation the driver mutation is introduced
-- `REP` — a replicate label used only to keep filenames from repeated runs apart (it does **not** seed SLiM's RNG — two runs with the same `AGE`/`DRIVER_TICK`/`REP` aren't guaranteed identical results)
-
-```
-cd CaseStudy
-python casestudy.py                              # defaults: AGE=81 DRIVER_TICK=38 REP=1
-python casestudy.py AGE=85 DRIVER_TICK=40 REP=2   # override any/all
-```
-
-`slim_config.txt` (same `SLIM_EXE` setting as `TumorGrowth\`) is still read, since SLiM still needs to run.
-
-**Output:** `CaseStudyOutputs\`:
-
-- `Sim4_CHIP<AGE>_rep<REP>.trees`
-- `newick\Sim4_CHIP<AGE>_rep<REP>.nwk`
-- `snv\Sim4_CHIP<AGE>_rep<REP>_snv.csv`
-- `pngTree\Sim4_CHIP<AGE>_rep<REP>_horizontal_labels.png` / `_no_labels.png`
-- `log.txt`
+- Cells reproduce clonally. Only point mutations (SNVs) are modeled; copy-number changes and structural variants are not.
+- There is no spatial structure within a population; metastatic sites are separate populations.
+- Treatment is a single dose in a single population, with one resistance mechanism.
+- Very large tumors (≫10⁴ cells) and long runs take more time and memory.
 
 ---
 
-## Shared conventions across all four
+## Repository contents
 
-- Every runner prints the equivalent raw terminal `slim` command before running it, so you can see exactly what's being executed.
-- Every runner appends one entry per run to its own `log.txt` — the command used, SLiM's console output, and the resulting file paths (or the failure reason).
-- Newick tip labels follow `gen0_ind<i>|pop<N>|<mutations>` (e.g. `no_mut`, `m1`, `m2`, or `m1+m2`).
-- SNV CSVs have one row per (cell, mutation) pair: `cell_id`, `population`, `mutation_type` (`m1`/`m2`/`none`), `position`, `generations_before_sampling`, `origin_tick`.
-- Tree PNGs render via R + `ape` (`plot_tree.R`) if `Rscript` is on your PATH, otherwise fall back to a matplotlib-based renderer — both produce a labeled and an unlabeled horizontal tree image.
-- How many cells get sampled for the tree/SNV output: `TumorGrowth\config.txt`'s `Pop1SampleCells` (and `PopN SampleCells` for migration populations) overrides the pooled default per population. Everywhere else — the pooled fallback in `TumorGrowth\`, and all sampling in `CaseStudy\`/`Trees\` — uses the fixed defaults in `slim_utilities.py`'s `load_tree_options()` (all populations, up to 400 cells, no fixed seed); edit that function directly to change them.
+| Path | Contents |
+|---|---|
+| `SLiMcancerCodes/simtreemaker.py` | Main program: run this |
+| `SLiMcancerCodes/config.txt` | All settings |
+| `SLiMcancerCodes/CONFIG_GUIDE.md` | Detailed explanation of every setting |
+| `SLiMcancerCodes/slim_config.txt` | Location of SLiM on your computer |
+| `SLiMcancerCodes/TG.slim`, `TG_Treatment.slim` | SLiM models (without and with treatment) |
+| `SLiMcancerCodes/slim_utilities.py`, `add_noise.py` | Sampling, tree, sequence and noise code |
+| `SLiMcancerCodes/plot_tree.R`, `plot_trajectory.R` | Plots (R + ape; matplotlib is used if R is missing) |
+| `SLIMcanceroutputs.zip` | Example output of all modes |
+| `GLOSSARY.md` | Definitions of terms |
+
+`add_noise.py` can also add noise to any FASTA alignment that has a normal sequence: `python add_noise.py alignment.fasta 0.3 0.01 0.2 Normal --seed 1`. The numbers are the missing-data, false-positive and false-negative rates; see `python add_noise.py -h`.
+
+Tested with SLiM 5.2, Python 3.11, tskit 1.0.3, R 4.5 and ape 5.8 on Windows.
+
+---
+
+## Citation
+
+If you use SimTreeMaker, please cite:
+
+Dawadi P, Miura S. SimTreeMaker: a flexible SLiM-based simulator for tumor evolution and cellular phylogeny benchmarking. *Manuscript in preparation.*
+
+and the software it builds on:
+- Haller BC, Messer PW (2023). SLiM 4: multispecies eco-evolutionary modeling. *The American Naturalist* 201(5):E127–E139.
+- Paradis E, Schliep K (2019). ape 5.0: an environment for modern phylogenetics and evolutionary analyses in R. *Bioinformatics* 35(3):526–528.
+
+## Contact
+
+Questions, bugs and suggestions: please open an [issue](https://github.com/dprabin25/SimTreeMaker/issues), or contact Prabin Dawadi (pdawadi@go.olemiss.edu) or Sayaka Miura (smiura@olemiss.edu), University of Mississippi.
