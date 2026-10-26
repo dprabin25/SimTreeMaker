@@ -50,9 +50,9 @@ cd SLiMcancerCodes
 python simtreemaker.py nomigration
 ```
 
-SLiM may print a warning that "a neutral mutation type was defined and used"; this is expected and can be ignored. A finished run ends with `Run complete.`
+SLiM may print a warning that "a neutral mutation type was defined and used"; this is expected and can be ignored. On Windows, keep the SimTreeMaker folder at a short path (e.g. `C:\SimTreeMaker` or `Documents\SimTreeMaker`), because Windows cannot create files whose full path is longer than 260 characters. A finished run ends with `Run complete.`
 
-After a few seconds you have a tumor of about 1,400 cells, 400 of them sampled. The results are in `SLIMcanceroutputs/TG/NoMigration/`:
+The results are in `SLIMcanceroutputs/TG/NoMigration/`:
 
 ```
 NoMigration/
