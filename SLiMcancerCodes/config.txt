@@ -1,0 +1,61 @@
+# TG (TumorGrowth) simulation settings
+# Run:   python simtreemaker.py [nomigration | migration] [noise | nonoise] [KEY=VALUE ...]
+#        python simtreemaker.py nomigration treatment [noise]   (single drug dose; or set treatment = on)
+# Guide: CONFIG_GUIDE.md explains every setting
+
+# ---- Run ---------------------------------------------------------------
+simulationEndTick   = 200      # generations to simulate (shared by all populations)
+simSeed             = 12345    # SLiM random seed: same seed + settings = same tumor (empty = random)
+
+# ---- Primary population (p1) -------------------------------------------
+initialPopSize      = 1        # founder cells
+targetSize          = 500      # carrying capacity for driver-free cells
+Pop1SampleCells     = 400      # cells sampled at the end
+
+# ---- Mutation ----------------------------------------------------------
+mutationRate        = 1e-8     # neutral (m1), per base per generation
+driverMutationRate  = 1e-8     # driver (m2), per base per generation
+m2_effect           = 0.3      # driver selection coefficient (s); each driver: fitness x (1 + h*s) = 1.15
+m2_dominance        = 0.5      # driver dominance (h)
+
+# ---- Migration (used only with `migration`) ----------------------------
+#        Origin  Time  IniPopSize  TargetSize  MigrationRate  SampleCells
+Pop2   = Pop1    50    5           100         0.01           100
+Pop3   = Pop1    100   5           80          0.01           100
+Pop4   = Pop3    125   5           150         0.01           100
+
+# ---- Sequencing noise ------------------------------------------------------
+# Writes TG/<mode>/noise/control/ (always no noise) and noise/test/ (these rates).
+# For one run, override with `noise` / `nonoise` on the command line.
+noise               = off      # on = every run adds noise; off = no noise
+missingRate         = 0.3      # average fraction of sites set to '?'
+cellSpread          = 0        # missing-rate variation between cells (0 = uniform, <1)
+siteSpread          = 0        # missing-rate variation between sites (0 = uniform, <1)
+fpRate              = 0.01     # false-positive rate at unmutated sites
+fnRate              = 0.2      # false-negative (dropout) rate at mutated sites
+noiseSeed           = 12345    # same seed + same run = identical noise
+
+# ---- Treatment (no-migration runs only) -----------------------------------
+# One drug dose at one generation. Sensitive cells die with probability
+# drugKill; resistant cells (carrying an m3) survive. For one run, override
+# with `treatment` / `notreatment` on the command line.
+treatment              = off        # on = no-migration runs include the dose; off = no drug
+treatmentTargetSize    = 2500       # carrying capacity for treatment runs (replaces targetSize;
+                                    #   5x larger so resistance starts at a more realistic fraction)
+treatmentTick          = 150        # the one generation the drug is given
+drugKill               = 0.7        # chance a sensitive cell dies at the dose (~ RECIST partial response)
+resistanceCost         = 0.05       # resistant cells are 5% less fit (m3 s = -0.05, h = 1)
+resistanceMutationRate = 2e-8       # resistance (m3), per base per generation
+m3Start                = 10050000   # resistance region (5 kb)
+m3End                  = 10054999
+
+# ---- Genome layout (0-based, inclusive, regions must not overlap) ------
+m1Start  = 0            # neutral: 10 Mb
+m1End    = 9999999
+m2Start  = 10000000     # driver: 50 kb (a few genes' worth)
+m2End    = 10049999
+# ---- Output ------------------------------------------------------------
+outputDir           = ../SLIMcanceroutputs   # results go to <outputDir>/TG/<mode>/
+treeOutputFile      = TumorGrowth   # base name for all output files
+fastaSeed           = 12345         # seed for FASTA bases
+writeFullFasta      = F             # T = also write full genomes per cell
